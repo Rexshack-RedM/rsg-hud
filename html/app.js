@@ -135,6 +135,8 @@ const playerHud = {
             stress: 0,
             voice: 0,
             temp: 0,
+            horsehealth: 0,
+            horsestamina: 0,
             youhavemail: false,
             show: false,
             talking: false,
@@ -146,6 +148,10 @@ const playerHud = {
             showThirst: true,
             showCleanliness: true,
             showStress: true,
+            showHorseStamina: false,
+            showHorseHealth: false,
+            showHorseStaminaColor: "#a16600",
+            showHorseHealthColor: "#a16600",
             showYouHaveMail: true,
             talkingColor: "#FFFFFF",
             showTemp: true,
@@ -175,6 +181,12 @@ const playerHud = {
             this.temp = data.temp;
             this.youhavemail = data.youhavemail;
             this.talking = data.talking;
+            this.showHorseStamina = data.onHorse;
+            this.showHorseHealth = data.onHorse;
+            if (data.onHorse) {
+                this.horsehealth = data.horsehealth;
+                this.horsestamina = data.horsestamina;
+            }
             if (data.health >= 100) {
                 this.showHealth = false;
             } else {

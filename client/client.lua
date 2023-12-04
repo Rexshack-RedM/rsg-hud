@@ -77,7 +77,32 @@ CreateThread(function()
             local playerid = PlayerId()
             local coords = GetEntityCoords(player)
             local stamina = tonumber(string.format("%.2f", Citizen.InvokeNative(0x0FF421E467373FCF, PlayerId(), Citizen.ResultAsFloat())))
+            local mounted = IsPedOnMount(PlayerPedId())
+            if metric then
+                temperature = math.floor(GetTemperatureAtCoords(coords)) .. "°C" --Uncomment for celcius
+                --temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) .. "°F" --Comment out for celcius 
+            end
+            ---@type any
+            local horsehealth = 0 
+            
+            ---@type any
+            local horsestam = 0 
 
+            if mounted then
+                local horse = GetMount(PlayerPedId())
+                local maxHealth = Citizen.InvokeNative(0x4700A416E8324EF3, horse, Citizen.ResultAsInteger())
+                local maxStamina = Citizen.InvokeNative(0xCB42AFE2B613EE55, horse, Citizen.ResultAsFloat())
+                horsehealth = tonumber(
+                    string.format(
+                        "%.2f", Citizen.InvokeNative(0x82368787EA73C0F7, horse) / maxHealth * 100 
+                    )
+                )
+                horsestam = tonumber(
+                    string.format(
+                        "%.2f", Citizen.InvokeNative(0x775A1CA7893AA8B5, horse, Citizen.ResultAsFloat()) / maxStamina * 100
+                    )
+                )
+            end
             if IsPauseMenuActive() then
                 show = false
             end
@@ -99,6 +124,9 @@ CreateThread(function()
                 cleanliness = cleanliness,
                 stress = stress,
                 talking = talking,
+                horsehealth = horsehealth,
+                horsestamina = horsestam,
+                onHorse = mounted,
                 temp = temperature,
                 voice = voice,
                 youhavemail = youhavemail,

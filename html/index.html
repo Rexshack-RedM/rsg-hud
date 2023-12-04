@@ -77,6 +77,14 @@
                         <q-circular-progress class="progress" show-value :value="youhavemail" size="3.75vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
                         <q-icon name="far fa-envelope" size="19px" :style="{color: showYouHaveMailColor}" />
                     </div>
+                    <div v-if="showHorseHealth">
+                        <q-circular-progress class="progress" show-value :value="horsehealth" size="40px" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                            <q-icon name="fas fa-heart" size="19px" :style="{color: showHorseHealthColor}" />
+                    </div>
+                    <div v-if="showHorseStamina">
+                        <q-circular-progress class="progress" show-value :value="horsestamina" size="40px" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                            <q-icon name="fas fa-bolt" size="19px" :style="{color: showHorseStaminaColor}" />
+                    </div>
                 </div>
             </div>
         </span>
