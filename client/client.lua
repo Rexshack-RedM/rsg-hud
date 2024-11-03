@@ -166,11 +166,18 @@ end)
 ------------------------------------------------
 CreateThread(function()
     while true do
-        Wait(10000)
+        Wait(5000)
         RSGCore.Functions.TriggerCallback('hud:server:getoutlawstatus', function(result)
             outlawstatus = result[1].outlawstatus
         end)
     end
+end)
+
+------------------------------------------------
+-- export : outlawstatus
+------------------------------------------------
+exports('GetOutlawStatus', function()
+    return outlawstatus
 end)
 
 ------------------------------------------------

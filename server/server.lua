@@ -1,5 +1,6 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local ResetStress = false
+lib.locale()
 
 RSGCore.Commands.Add('cash', 'Check Cash Balance', {}, false, function(source, args)
     local Player = RSGCore.Functions.GetPlayer(source)
@@ -40,7 +41,7 @@ RegisterNetEvent('hud:server:GainStress', function(amount)
         end
         Player.Functions.SetMetaData('stress', newStress)
         TriggerClientEvent('hud:client:UpdateStress', src, newStress)
-        TriggerClientEvent('ox_lib:notify', src, {title = Lang:t("info.getstress"), type = 'inform', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lang_1'), type = 'inform', duration = 5000 })
     end
 end)
 
@@ -61,7 +62,7 @@ RegisterNetEvent('hud:server:GainThirst', function(amount)
             end
         Player.Functions.SetMetaData('thirst', newThirst)
         TriggerClientEvent('hud:client:UpdateThirst', src, newThirst)
-        TriggerClientEvent('ox_lib:notify', src, {title = Lang:t("info.thirsty"), type = 'inform', duration = 5000 })
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lang_2'), type = 'inform', duration = 5000 })
     end
 end)
 
