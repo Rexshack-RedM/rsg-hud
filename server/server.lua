@@ -26,26 +26,6 @@ RSGCore.Commands.Add('bloodmoney', locale('sv_lang_5'), {}, false, function(sour
     end
 end)
 
-RSGCore.Commands.Add('goldcoin', locale('sv_lang_6'), {}, false, function(source, args)
-    local Player = RSGCore.Functions.GetPlayer(source)
-    local goldcoinamount = Player.PlayerData.money.goldcoin
-    if goldcoinamount ~= nil then
-        TriggerClientEvent('hud:client:ShowAccounts', source, 'goldcoin', goldcoinamount)
-    else
-        return
-    end
-end)
-
-RSGCore.Commands.Add('experience', locale('sv_lang_7'), {}, false, function(source, args)
-    local Player = RSGCore.Functions.GetPlayer(source)
-    local experienceamount = Player.PlayerData.money.experience
-    if experienceamount ~= nil then
-        TriggerClientEvent('hud:client:ShowAccounts', source, 'experience', experienceamount)
-    else
-        return
-    end
-end)
-
 ----------------------------
 -- GainStress or GainThirst
 ----------------------------
