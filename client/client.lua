@@ -8,9 +8,6 @@ local thirst = 100
 
 local cashAmount = 0
 local bloodmoneyAmount = 0
-local goldcoinAmount = 0
-local experienceAmount = 0
-
 local bankAmount = 0
 
 local isLoggedIn = false
@@ -191,6 +188,7 @@ end)
 exports('GetOutlawStatus', function()
     return outlawstatus
 end)
+
 ----------------
 -- player hud
 ----------------
@@ -431,18 +429,6 @@ RegisterNetEvent('hud:client:ShowAccounts', function(type, amount)
             action = 'show',
             type = 'bank',
             bank = string.format("%.2f", amount)
-        })
-    elseif type == 'goldcoin' then
-        SendNUIMessage({
-            action = 'show',
-            type = 'goldcoin',
-            goldcoin = string.format("%.2f", amount)
-        })
-    elseif type == 'experience' then
-        SendNUIMessage({
-            action = 'show',
-            type = 'experience',
-            experience = string.format("%.2f", amount)
         })
     end
 end)
