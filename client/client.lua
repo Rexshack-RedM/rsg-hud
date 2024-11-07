@@ -442,16 +442,12 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
         cashAmount = PlayerData.money.cash
         bloodmoneyAmount = PlayerData.money.bloodmoney
         bankAmount = PlayerData.money.bank
-        goldcoinAmount = PlayerData.money.goldcoin
-        experienceAmount = PlayerData.money.experience
     end)
     SendNUIMessage({
         action = 'update',
         cash = RSGCore.Shared.Round(cashAmount, 2),
         bloodmoney = RSGCore.Shared.Round(bloodmoneyAmount, 2),
         bank = RSGCore.Shared.Round(bankAmount, 2),
-        goldcoin = RSGCore.Shared.Round(goldcoinAmount, 2),
-        experience = RSGCore.Shared.Round(experienceAmount, 2),
         amount = RSGCore.Shared.Round(amount, 2),
         minus = isMinus,
         type = type,
