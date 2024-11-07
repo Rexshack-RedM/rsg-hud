@@ -1,5 +1,9 @@
 {
     "sv_lang_1" : "You are getting stressed",
     "sv_lang_2" : "You are a bit thirsty",
-    "sv_lang_3" : "You are feeling relieved from stress"
+    "sv_lang_3" : "You are feeling relieved from stress",
+    "sv_lang_4" : "Check Cash Balance",
+    "sv_lang_5" : "Check Bloodmoney Balance",
+    "sv_lang_6" : "Check GC Balance",
+    "sv_lang_7" : "Check XP Balance"
 }

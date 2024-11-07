@@ -2,7 +2,11 @@ local RSGCore = exports['rsg-core']:GetCoreObject()
 local ResetStress = false
 lib.locale()
 
-RSGCore.Commands.Add('cash', 'Check Cash Balance', {}, false, function(source, args)
+--------------
+--  COMMANDS
+--------------
+
+RSGCore.Commands.Add('cash', locale('sv_lang_4'), {}, false, function(source, args)
     local Player = RSGCore.Functions.GetPlayer(source)
     local cashamount = Player.PlayerData.money.cash
     if cashamount ~= nil then
@@ -12,7 +16,7 @@ RSGCore.Commands.Add('cash', 'Check Cash Balance', {}, false, function(source, a
     end
 end)
 
-RSGCore.Commands.Add('bloodmoney', 'Check Bloodmoney Balance', {}, false, function(source, args)
+RSGCore.Commands.Add('bloodmoney', locale('sv_lang_5'), {}, false, function(source, args)
     local Player = RSGCore.Functions.GetPlayer(source)
     local bloodmoneyamount = Player.PlayerData.money.bloodmoney
     if bloodmoneyamount ~= nil then
@@ -22,11 +26,34 @@ RSGCore.Commands.Add('bloodmoney', 'Check Bloodmoney Balance', {}, false, functi
     end
 end)
 
+RSGCore.Commands.Add('goldcoin', locale('sv_lang_6'), {}, false, function(source, args)
+    local Player = RSGCore.Functions.GetPlayer(source)
+    local goldcoinamount = Player.PlayerData.money.goldcoin
+    if goldcoinamount ~= nil then
+        TriggerClientEvent('hud:client:ShowAccounts', source, 'goldcoin', goldcoinamount)
+    else
+        return
+    end
+end)
+
+RSGCore.Commands.Add('experience', locale('sv_lang_7'), {}, false, function(source, args)
+    local Player = RSGCore.Functions.GetPlayer(source)
+    local experienceamount = Player.PlayerData.money.experience
+    if experienceamount ~= nil then
+        TriggerClientEvent('hud:client:ShowAccounts', source, 'experience', experienceamount)
+    else
+        return
+    end
+end)
+
+----------------------------
+-- GainStress or GainThirst
+----------------------------
 RegisterNetEvent('hud:server:GainStress', function(amount)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     local newStress
-    if Player ~= nil and Player.PlayerData.job.name ~= 'police' then
+    if Player ~= nil and not table.find(Config.leo, Player.PlayerData.job.name) then
         if not ResetStress then
             if Player.PlayerData.metadata['stress'] == nil then
                 Player.PlayerData.metadata['stress'] = 0
@@ -89,7 +116,10 @@ RegisterNetEvent('hud:server:RelieveStress', function(amount)
     end
 end)
 
+---------------------------
 -- count telegrams for player
+---------------------------
+
 RSGCore.Functions.CreateCallback('hud:server:getTelegramsAmount', function(source, cb)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)

@@ -1,37 +1,47 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local speed = 0.0
 local radarActive = false
+
 local stress = 0
 local hunger = 100
 local thirst = 100
+
 local cashAmount = 0
+local bloodmoneyAmount = 0
+local goldcoinAmount = 0
+local experienceAmount = 0
+
 local bankAmount = 0
+
 local isLoggedIn = false
 local youhavemail = false
 local incinematic = false
 local inBathing = false
 local inClothing = false
+
 local showUI = true
+
 local temperature = 0
 local temp = 0
 local tempadd = 0
 local clean = 0
 
-------------------------------------------------
+------------
 -- hide ui
-------------------------------------------------
+------------
 RegisterNetEvent("HideAllUI")
 AddEventHandler("HideAllUI", function()
     showUI = not showUI
 end)
 
-------------------------------------------------
+------------------------
 -- hud display settings
-------------------------------------------------
+------------------------
+
 Citizen.CreateThread(function()
 
     if Config.HidePlayerHealthNative then
-        Citizen.InvokeNative(0xC116E6DF68DCE667, 4, 2) -- ICON_HEALTH / HIDE
+        Citizen.InvokeNative(0xC116E6DF68DCE667, 4, 2) -- ICON_HEALTH / HIDE  -- UitutorialSetRpgIconVisibility(
         Citizen.InvokeNative(0xC116E6DF68DCE667, 5, 2) -- ICON_HEALTH_CORE / HIDE
     end
 
@@ -62,9 +72,10 @@ Citizen.CreateThread(function()
 
 end)
 
-------------------------------------------------
+--------------
 -- functions
-------------------------------------------------
+--------------
+
 local function GetShakeIntensity(stresslevel)
     local retval = 0.05
     for _, v in pairs(Config.Intensity['shake']) do
@@ -90,7 +101,8 @@ end
 ------------------------------------------------
 -- flies when not clean (Config.MinCleanliness)
 ------------------------------------------------
-local FliesSpawn = function (clean)
+
+local FliesSpawn = function (cleanData)
     local new_ptfx_dictionary = "core"
     local new_ptfx_name = "env_flies"
     local is_particle_effect_active = false
@@ -108,7 +120,7 @@ local FliesSpawn = function (clean)
     local ptfx_axis_x = 0
     local ptfx_axis_y = 0
     local ptfx_axis_z = 0
-    local clean = clean
+    local clean = cleanData
     if not is_particle_effect_active and clean <= Config.MinCleanliness then
         current_ptfx_dictionary = new_ptfx_dictionary
         current_ptfx_name = new_ptfx_name
@@ -122,7 +134,7 @@ local FliesSpawn = function (clean)
         if not filesspawned and Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then  -- HasNamedPtfxAssetLoaded
             Citizen.InvokeNative(0xA10DB07FC234DD12, current_ptfx_dictionary) -- UseParticleFxAsset
 
-            current_ptfx_handle_id = Citizen.InvokeNative(0x9C56621462FFE7A6,current_ptfx_name,PlayerPedId(),ptfx_offcet_x,ptfx_offcet_y,ptfx_offcet_z,ptfx_rot_x,ptfx_rot_y,ptfx_rot_z,bone_index,ptfx_scale,ptfx_axis_x,ptfx_axis_y,ptfx_axis_z) -- StartNetworkedParticleFxLoopedOnEntityBone
+            current_ptfx_handle_id = Citizen.InvokeNative(0x9C56621462FFE7A6, current_ptfx_name, PlayerPedId(), ptfx_offcet_x, ptfx_offcet_y, ptfx_offcet_z, ptfx_rot_x, ptfx_rot_y, ptfx_rot_z, bone_index, ptfx_scale, ptfx_axis_x, ptfx_axis_y, ptfx_axis_z) -- StartNetworkedParticleFxLoopedOnEntityBone
             is_particle_effect_active = true
         else
             print("cant load ptfx dictionary!")
@@ -138,9 +150,9 @@ local FliesSpawn = function (clean)
     end
 end
 
-------------------------------------------------
+-----------
 -- events
-------------------------------------------------
+-----------
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst, newCleanliness)
     local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
@@ -179,10 +191,10 @@ end)
 exports('GetOutlawStatus', function()
     return outlawstatus
 end)
-
-------------------------------------------------
+----------------
 -- player hud
-------------------------------------------------
+----------------
+
 CreateThread(function()
     while true do
         Wait(500)
@@ -201,8 +213,8 @@ CreateThread(function()
             end
 
             -- horse health, stamina & cleanliness
-            local horsehealth = 0 
-            local horsestamina = 0 
+            local horsehealth = 0
+            local horsestamina = 0
             local horseclean = 0
 
             if mounted then
@@ -249,13 +261,13 @@ CreateThread(function()
         if cleanliness ~= nil and Config.FlyEffect then
             FliesSpawn(cleanliness)
         end
-        
+
     end
 end)
 
-------------------------------------------------
+------------------------
 -- show minimap setup
-------------------------------------------------
+------------------------
 
 local test = true
 CreateThread(function()
@@ -278,13 +290,11 @@ CreateThread(function()
         else
             if Config.OnFootMinimap and showUI then
                 SetMinimapType(1)
-                -- interior zoom
-                if interiorId ~= 0 then
-                    -- ped entered an interior
-                    SetRadarConfigType(0xDF5DB58C, 0) -- zoom in the map by 10x
+
+                if interiorId ~= 0 then -- interior zoom
+                    SetRadarConfigType(0xDF5DB58C, 0) -- zoom in the map by 10x-- ped entered an interior
                 else
-                    -- ped left an interior
-                    SetRadarConfigType(0x25B517BF, 0) -- zoom in the map by 0x (return the minimap back to normal)
+                    SetRadarConfigType(0x25B517BF, 0) -- zoom in the map by 0x (return the minimap back to normal)-- ped left an interior
                 end
             else
                 if Config.OnFootCompass and showUI then
@@ -297,14 +307,13 @@ CreateThread(function()
     end
 end)
 
-------------------------------------------------
+-------------------------
 -- work out temperature
-------------------------------------------------
+-------------------------
+
 CreateThread(function()
     while true do
         Wait(1000)
-
-       
         local coords = GetEntityCoords(cache.ped)
 
         -- wearing
@@ -319,7 +328,7 @@ CreateThread(function()
         local poncho   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xAF14310B) -- poncho
         local skirts   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xA0E3AB7F) -- skirts
         local chaps    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x3107499B) -- chaps
-        
+
         -- get temp add
         if hat      == 1 then what      = Config.WearingHat      else what      = 0 end
         if shirt    == 1 then wshirt    = Config.WearingShirt    else wshirt    = 0 end
@@ -332,9 +341,9 @@ CreateThread(function()
         if poncho   == 1 then wponcho   = Config.WearingPoncho   else wponcho   = 0 end
         if skirts   == 1 then wskirts   = Config.WearingSkirt    else wskirts   = 0 end
         if chaps    == 1 then wchaps    = Config.WearingChaps    else wchaps    = 0 end
-        
+
         local tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
-        
+
         if Config.TempFormat == 'celsius' then
             temperature = math.floor(GetTemperatureAtCoords(coords)) + tempadd .. "°C" --Uncomment for celcius
             temp = math.floor(GetTemperatureAtCoords(coords)) + tempadd
@@ -343,13 +352,14 @@ CreateThread(function()
             temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd .. "°F" --Comment out for celcius
             temp = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd
         end
-   
+
     end
 end)
 
-------------------------------------------------
+------------------------------
 -- health/cleanliness damage
-------------------------------------------------
+------------------------------
+
 CreateThread(function()
     while true do
         Wait(5000)
@@ -368,7 +378,7 @@ CreateThread(function()
             elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                 Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
             end
-            
+
             -- hot health damage
             if temp > Config.MaxTemp then
                 if Config.DoHealthDamageFx then
@@ -399,9 +409,10 @@ CreateThread(function()
     end
 end)
 
-------------------------------------------------
+--------------
 -- money hud
-------------------------------------------------
+--------------
+
 RegisterNetEvent('hud:client:ShowAccounts', function(type, amount)
     if type == 'cash' then
         SendNUIMessage({
@@ -421,32 +432,50 @@ RegisterNetEvent('hud:client:ShowAccounts', function(type, amount)
             type = 'bank',
             bank = string.format("%.2f", amount)
         })
+    elseif type == 'goldcoin' then
+        SendNUIMessage({
+            action = 'show',
+            type = 'goldcoin',
+            goldcoin = string.format("%.2f", amount)
+        })
+    elseif type == 'experience' then
+        SendNUIMessage({
+            action = 'show',
+            type = 'experience',
+            experience = string.format("%.2f", amount)
+        })
     end
 end)
 
-------------------------------------------------
+--------------------
 -- on money change
-------------------------------------------------
+--------------------
+
 RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
     RSGCore.Functions.GetPlayerData(function(PlayerData)
         cashAmount = PlayerData.money.cash
         bloodmoneyAmount = PlayerData.money.bloodmoney
         bankAmount = PlayerData.money.bank
+        goldcoinAmount = PlayerData.money.goldcoin
+        experienceAmount = PlayerData.money.experience
     end)
     SendNUIMessage({
         action = 'update',
         cash = RSGCore.Shared.Round(cashAmount, 2),
         bloodmoney = RSGCore.Shared.Round(bloodmoneyAmount, 2),
         bank = RSGCore.Shared.Round(bankAmount, 2),
+        goldcoin = RSGCore.Shared.Round(goldcoinAmount, 2),
+        experience = RSGCore.Shared.Round(experienceAmount, 2),
         amount = RSGCore.Shared.Round(amount, 2),
         minus = isMinus,
         type = type,
     })
 end)
 
-------------------------------------------------
+-----------------------------
 -- stress gain when speeding
-------------------------------------------------
+-----------------------------
+
 CreateThread(function() -- Speeding
     while true do
         if RSGCore ~= nil then
@@ -461,9 +490,10 @@ CreateThread(function() -- Speeding
     end
 end)
 
-------------------------------------------------
+--------------------------------
 -- stress gained while shooting
-------------------------------------------------
+--------------------------------
+
 CreateThread(function()
     while true do
         if RSGCore ~= nil  then
@@ -477,12 +507,12 @@ CreateThread(function()
     end
 end)
 
-------------------------------------------------
+--------------------------
 -- stress screen effects
-------------------------------------------------
+--------------------------
+
 CreateThread(function()
     while true do
-     
         local sleep = GetEffectInterval(stress)
 
         if stress >= 100 then
@@ -492,7 +522,7 @@ CreateThread(function()
             ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', ShakeIntensity)
 
             if not IsPedRagdoll(cache.ped) and IsPedOnFoot(cache.ped) and not IsPedSwimming(cache.ped) then
-              
+
                 SetPedToRagdollWithFall(cache.ped, RagdollTimeout, RagdollTimeout, 1, GetEntityForwardVector(cache.ped), 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
             end
 
@@ -512,9 +542,10 @@ CreateThread(function()
     end
 end)
 
-------------------------------------------------
+--------------------
 -- check telegrams
-------------------------------------------------
+--------------------
+
 CreateThread(function()
     while true do
         if LocalPlayer.state.isLoggedIn then
@@ -530,9 +561,10 @@ CreateThread(function()
     end
 end)
 
-------------------------------------------------
+---------------------------------
 -- check cinematic and hide hud
-------------------------------------------------
+---------------------------------
+
 CreateThread(function()
     while true do
         if LocalPlayer.state.isLoggedIn then

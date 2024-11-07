@@ -6,6 +6,7 @@ Config = {}
 Config.StressChance = 0.1 -- Default: 10% -- Percentage Stress Chance When Shooting (0-1)
 Config.MinimumStress = 50 -- Minimum Stress Level For Screen Shaking
 Config.MinimumSpeed = 100 -- Going Over This Speed Will Cause Stress
+Config.leo = {'vallaw', 'rholaw', 'blklaw', 'strlaw', 'stdenlaw', 'police'} -- no stress jobs
 
 ----------------------------------
 -- hud player display settings
@@ -24,7 +25,7 @@ Config.HideHorseCourageNative = true
 ----------------------------------
 -- telegrame check settings
 ----------------------------------
-Config.TelegramCheck = 5000 -- amount of milliseconds to check your telegrams
+Config.TelegramCheck = 10000 -- amount of milliseconds to check your telegrams
 
 ----------------------------------
 -- minimap / compass settings
