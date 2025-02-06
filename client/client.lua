@@ -266,7 +266,7 @@ CreateThread(function()
         local IsBirdPostApproaching = exports['rsg-telegram']:IsBirdPostApproaching()
 
         if isMounted or IsBirdPostApproaching then
-            if Config.MounttMinimap and showUI then
+            if Config.MountMinimap and showUI then
                 if Config.MountCompass then
                     SetMinimapType(3)
                 else
