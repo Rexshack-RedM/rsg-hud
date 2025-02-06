@@ -31,7 +31,7 @@ Config.TelegramCheck = 5000 -- amount of milliseconds to check your telegrams
 ----------------------------------
 Config.OnFootMinimap = false -- set to true/false to disable/enable minimap when on foot
 Config.OnFootCompass = false -- true = have the minimap set to a compass instead of off or normal minimap
-Config.MounttMinimap = true  -- set to false if you want to disable the minimap when on mount
+Config.MountMinimap = true  -- set to false if you want to disable the minimap when on mount
 Config.MountCompass  = false -- set to true if you want to have a compass instead of normal minimap while on a mount
 
 ----------------------------------
