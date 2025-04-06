@@ -89,14 +89,14 @@ local current_ptfx_handle_id = false
 local is_particle_effect_active = false
 
 local FliesSpawn = function (clean)
-    local new_ptfx_dictionary = "scr_fme_spawn_effects"
-    local new_ptfx_name = "scr_animal_poop_flies"
+    local new_ptfx_dictionary = "scr_mg_cleaning_stalls"
+    local new_ptfx_name = "scr_mg_stalls_manure_flies"
     local current_ptfx_dictionary = new_ptfx_dictionary
     local current_ptfx_name = new_ptfx_name
-    local bone_index = 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
-    local ptfx_offcet_x = 0.0
+    local bone_index = IsPedMale() and 413 or 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
+    local ptfx_offcet_x = 0.2
     local ptfx_offcet_y = 0.0
-    local ptfx_offcet_z = 0.0
+    local ptfx_offcet_z = -0.4
     local ptfx_rot_x = 0.0
     local ptfx_rot_y = 0.0
     local ptfx_rot_z = 0.0
@@ -105,6 +105,20 @@ local FliesSpawn = function (clean)
     local ptfx_axis_y = 0
     local ptfx_axis_z = 0
     local clean = clean
+
+    if LocalPlayer.state.isBathingActive then
+        if is_particle_effect_active then
+            if Citizen.InvokeNative(0x9DD5AFF561E88F2A, current_ptfx_handle_id) then   -- DoesParticleFxLoopedExist
+                Citizen.InvokeNative(0x459598F579C98929, current_ptfx_handle_id, false) 
+            end
+
+            current_ptfx_handle_id = false
+            is_particle_effect_active = false
+        end
+
+        return
+    end
+
     if not is_particle_effect_active and clean < Config.MinCleanliness then
         current_ptfx_dictionary = new_ptfx_dictionary
         current_ptfx_name = new_ptfx_name
@@ -194,7 +208,7 @@ end)
 CreateThread(function()
     while true do
         Wait(500)
-        if LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering() and not LocalPlayer.state.IsBathingActive and not LocalPlayer.state.inClothingStore then
+        if LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering() and not LocalPlayer.state.isBathingActive and not LocalPlayer.state.inClothingStore then
             local show = true
             local stamina = tonumber(string.format("%.2f", Citizen.InvokeNative(0x0FF421E467373FCF, cache.playerId, Citizen.ResultAsFloat())))
             local mounted = IsPedOnMount(cache.ped)
