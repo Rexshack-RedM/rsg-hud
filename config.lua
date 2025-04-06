@@ -79,7 +79,7 @@ Config.MaxTemp = 40
 ----------------------------------
 -- cleanliness limit before impacts health
 ----------------------------------
-Config.FlyEffect = false -- toggle flies on/off
+Config.FlyEffect = true -- toggle flies on/off
 Config.MinCleanliness = 30
 
 ----------------------------------

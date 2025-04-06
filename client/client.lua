@@ -1,16 +1,11 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local speed = 0.0
-local radarActive = false
 local stress = 0
 local hunger = 100
 local thirst = 100
 local cashAmount = 0
 local bankAmount = 0
-local isLoggedIn = false
 local youhavemail = false
-local incinematic = false
-local inBathing = false
-local inClothing = false
 local showUI = true
 local temperature = 0
 local temp = 0
@@ -90,18 +85,19 @@ end
 ------------------------------------------------
 -- flies when not clean (Config.MinCleanliness)
 ------------------------------------------------
+local current_ptfx_handle_id = false
+local is_particle_effect_active = false
+
 local FliesSpawn = function (clean)
-    local new_ptfx_dictionary = "core"
-    local new_ptfx_name = "env_flies"
-    local is_particle_effect_active = false
+    local new_ptfx_dictionary = "scr_mg_cleaning_stalls"
+    local new_ptfx_name = "scr_mg_stalls_manure_flies"
     local current_ptfx_dictionary = new_ptfx_dictionary
     local current_ptfx_name = new_ptfx_name
-    local current_ptfx_handle_id = false
-    local bone_index = 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
-    local ptfx_offcet_x = 0.0
+    local bone_index = IsPedMale() and 413 or 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
+    local ptfx_offcet_x = 0.2
     local ptfx_offcet_y = 0.0
-    local ptfx_offcet_z = 0.0
-    local ptfx_rot_x = -90.0
+    local ptfx_offcet_z = -0.4
+    local ptfx_rot_x = 0.0
     local ptfx_rot_y = 0.0
     local ptfx_rot_z = 0.0
     local ptfx_scale = 1.0
@@ -109,7 +105,21 @@ local FliesSpawn = function (clean)
     local ptfx_axis_y = 0
     local ptfx_axis_z = 0
     local clean = clean
-    if not is_particle_effect_active and clean <= Config.MinCleanliness then
+
+    if LocalPlayer.state.isBathingActive then
+        if is_particle_effect_active then
+            if Citizen.InvokeNative(0x9DD5AFF561E88F2A, current_ptfx_handle_id) then   -- DoesParticleFxLoopedExist
+                Citizen.InvokeNative(0x459598F579C98929, current_ptfx_handle_id, false) 
+            end
+
+            current_ptfx_handle_id = false
+            is_particle_effect_active = false
+        end
+
+        return
+    end
+
+    if not is_particle_effect_active and clean < Config.MinCleanliness then
         current_ptfx_dictionary = new_ptfx_dictionary
         current_ptfx_name = new_ptfx_name
         if not Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then -- HasNamedPtfxAssetLoaded
@@ -127,7 +137,7 @@ local FliesSpawn = function (clean)
         else
             print("cant load ptfx dictionary!")
         end
-    else
+    elseif is_particle_effect_active and clean >= Config.MinCleanliness then
         if current_ptfx_handle_id then
             if Citizen.InvokeNative(0x9DD5AFF561E88F2A, current_ptfx_handle_id) then   -- DoesParticleFxLoopedExist
                 Citizen.InvokeNative(0x459598F579C98929, current_ptfx_handle_id, false)   -- RemoveParticleFx
@@ -135,6 +145,13 @@ local FliesSpawn = function (clean)
         end
         current_ptfx_handle_id = false
         is_particle_effect_active = false
+    elseif is_particle_effect_active then
+        if current_ptfx_handle_id then
+            if not Citizen.InvokeNative(0x9DD5AFF561E88F2A, current_ptfx_handle_id) then   -- DoesParticleFxLoopedExist
+                current_ptfx_handle_id = false
+                is_particle_effect_active = false
+            end
+        end
     end
 end
 
@@ -159,6 +176,11 @@ end)
 
 RegisterNetEvent('hud:client:UpdateStress', function(newStress)
     stress = newStress
+end)
+
+RegisterNetEvent('hud:client:UpdateCleanliness', function(newCleanliness)
+    local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+    cleanliness = newCleanliness - cleanstats
 end)
 
 ------------------------------------------------
@@ -186,7 +208,7 @@ end)
 CreateThread(function()
     while true do
         Wait(500)
-        if LocalPlayer.state.isLoggedIn and incinematic == false and inBathing == false and inClothing == false and showUI then
+        if LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering() and not LocalPlayer.state.isBathingActive and not LocalPlayer.state.inClothingStore then
             local show = true
             local stamina = tonumber(string.format("%.2f", Citizen.InvokeNative(0x0FF421E467373FCF, cache.playerId, Citizen.ResultAsFloat())))
             local mounted = IsPedOnMount(cache.ped)
@@ -257,15 +279,12 @@ end)
 -- show minimap setup
 ------------------------------------------------
 
-local test = true
 CreateThread(function()
     while true do
         Wait(500)
-        local interiorId = GetInteriorFromEntity(cache.ped)
         local isMounted = IsPedOnMount(cache.ped) or IsPedInAnyVehicle(cache.ped)
-        local IsBirdPostApproaching = exports['rsg-telegram']:IsBirdPostApproaching()
 
-        if isMounted or IsBirdPostApproaching then
+        if isMounted or exports['rsg-telegram']:IsBirdPostApproaching() then
             if Config.MountMinimap and showUI then
                 if Config.MountCompass then
                     SetMinimapType(3)
@@ -279,7 +298,7 @@ CreateThread(function()
             if Config.OnFootMinimap and showUI then
                 SetMinimapType(1)
                 -- interior zoom
-                if interiorId ~= 0 then
+                if GetInteriorFromEntity(cache.ped) ~= 0 then
                     -- ped entered an interior
                     SetRadarConfigType(0xDF5DB58C, 0) -- zoom in the map by 10x
                 else
@@ -383,12 +402,12 @@ CreateThread(function()
             end
 
             -- cleanliness health damage
-            if cleanliness ~= nil and cleanliness < Config.MinCleanliness then
+            if cleanliness ~= nil and cleanliness <= 0 then
                 if Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
                 end
                 if Config.DoHealthPainSound then
-                    PlayPain(cache.ped, 9, 1, true, true)
+                    PlayPain(cache.ped, 12, 1, true, true)
                 end
                 SetEntityHealth(cache.ped, health - Config.RemoveHealth)
             elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
@@ -457,7 +476,7 @@ CreateThread(function() -- Speeding
                 end
             end
         end
-        Wait(20000)
+        Wait(10000)
     end
 end)
 
@@ -527,40 +546,5 @@ CreateThread(function()
             end)
         end
         Wait(Config.TelegramCheck)
-    end
-end)
-
-------------------------------------------------
--- check cinematic and hide hud
-------------------------------------------------
-CreateThread(function()
-    while true do
-        if LocalPlayer.state.isLoggedIn then
-            local cinematic = Citizen.InvokeNative(0xBF7C780731AADBF8, Citizen.ResultAsInteger())
-            local isBathingActive = exports['rsg-bathing']:IsBathingActive()
-            local IsCothingActive = exports['rsg-appearance']:IsCothingActive()
-
-            -- cinematic check
-            if cinematic == 1 then
-                incinematic = true
-            else
-                incinematic = false
-            end
-            -- bathing check
-            if isBathingActive then
-                inBathing = true
-            else
-                inBathing = false
-            end
-            -- clothing check
-            if IsCothingActive then
-                inClothing = true
-            else
-                inClothing = false
-            end
-
-        end
-
-        Wait(500)
     end
 end)
