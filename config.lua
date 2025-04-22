@@ -24,7 +24,6 @@ Config.HideHorseCourageNative = true
 ----------------------------------
 -- telegrame check settings
 ----------------------------------
-Config.FlyEffect = true -- toggle flies on/off
 Config.TelegramCheck = 5000 -- amount of milliseconds to check your telegrams
 
 ----------------------------------
@@ -80,6 +79,7 @@ Config.MaxTemp = 40
 ----------------------------------
 -- cleanliness limit before impacts health
 ----------------------------------
+Config.FlyEffect = true -- toggle flies on/off
 Config.MinCleanliness = 30
 
 ----------------------------------
