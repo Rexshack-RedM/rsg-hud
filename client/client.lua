@@ -270,7 +270,7 @@ CreateThread(function()
         if cleanliness ~= nil and Config.FlyEffect then
             FliesSpawn(cleanliness)
         end
-        
+
     end
 end)
 
@@ -322,7 +322,6 @@ CreateThread(function()
     while true do
         Wait(1000)
 
-       
         local coords = GetEntityCoords(cache.ped)
 
         -- wearing
@@ -337,7 +336,7 @@ CreateThread(function()
         local poncho   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xAF14310B) -- poncho
         local skirts   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xA0E3AB7F) -- skirts
         local chaps    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x3107499B) -- chaps
-        
+
         -- get temp add
         if hat      == 1 then what      = Config.WearingHat      else what      = 0 end
         if shirt    == 1 then wshirt    = Config.WearingShirt    else wshirt    = 0 end
@@ -350,9 +349,9 @@ CreateThread(function()
         if poncho   == 1 then wponcho   = Config.WearingPoncho   else wponcho   = 0 end
         if skirts   == 1 then wskirts   = Config.WearingSkirt    else wskirts   = 0 end
         if chaps    == 1 then wchaps    = Config.WearingChaps    else wchaps    = 0 end
-        
+
         local tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
-        
+
         if Config.TempFormat == 'celsius' then
             temperature = math.floor(GetTemperatureAtCoords(coords)) + tempadd .. "°C" --Uncomment for celcius
             temp = math.floor(GetTemperatureAtCoords(coords)) + tempadd
@@ -361,7 +360,7 @@ CreateThread(function()
             temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd .. "°F" --Comment out for celcius
             temp = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd
         end
-   
+
     end
 end)
 
@@ -386,7 +385,7 @@ CreateThread(function()
             elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                 Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
             end
-            
+
             -- hot health damage
             if temp > Config.MaxTemp then
                 if Config.DoHealthDamageFx then
@@ -412,7 +411,6 @@ CreateThread(function()
             elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                 Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
             end
-
         end
     end
 end)
