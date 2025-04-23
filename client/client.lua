@@ -5,7 +5,6 @@ local hunger = 100
 local thirst = 100
 local cashAmount = 0
 local bankAmount = 0
-local youhavemail = false
 local showUI = true
 local temperature = 0
 local temp = 0
@@ -258,7 +257,7 @@ CreateThread(function()
                 horsestamina = horsestamina,
                 horseclean = horseclean,
                 voice = voice,
-                youhavemail = youhavemail,
+                youhavemail = LocalPlayer.state.telegramUnreadMessages or 0 > 0,
                 outlawstatus = outlawstatus,
             })
         else
@@ -284,7 +283,7 @@ CreateThread(function()
         Wait(500)
         local isMounted = IsPedOnMount(cache.ped) or IsPedInAnyVehicle(cache.ped)
 
-        if isMounted or exports['rsg-telegram']:IsBirdPostApproaching() then
+        if isMounted or LocalPlayer.state.telegramIsBirdPostApproaching then
             if Config.MountMinimap and showUI then
                 if Config.MountCompass then
                     SetMinimapType(3)
@@ -528,23 +527,5 @@ CreateThread(function()
             ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', ShakeIntensity)
         end
         Wait(sleep)
-    end
-end)
-
-------------------------------------------------
--- check telegrams
-------------------------------------------------
-CreateThread(function()
-    while true do
-        if LocalPlayer.state.isLoggedIn then
-            RSGCore.Functions.TriggerCallback('hud:server:getTelegramsAmount', function(amount)
-                if amount > 0 then
-                    youhavemail = true
-                else
-                    youhavemail = false
-                end
-            end)
-        end
-        Wait(Config.TelegramCheck)
     end
 end)

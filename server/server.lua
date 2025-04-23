@@ -89,20 +89,6 @@ RegisterNetEvent('hud:server:RelieveStress', function(amount)
     end
 end)
 
--- count telegrams for player
-RSGCore.Functions.CreateCallback('hud:server:getTelegramsAmount', function(source, cb)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if Player ~= nil then
-        local result = MySQL.prepare.await('SELECT COUNT(*) FROM telegrams WHERE citizenid = ? AND (status = ? OR birdstatus = ?)', {Player.PlayerData.citizenid, 0, 0})
-        if result > 0 then
-            cb(result)
-        else
-            cb(0)
-        end
-    end
-end)
-
 ---------------------------------
 -- get outlaw status
 ---------------------------------
