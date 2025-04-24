@@ -1,6 +1,14 @@
 Config = {}
 
 ----------------------------------
+-- needs settings
+----------------------------------
+Config.StatusInterval = 5000 -- how often to update hunger/thirst status in milliseconds
+Config.HungerRate = 0.10 -- Rate at which hunger goes down.
+Config.ThirstRate = 0.15 -- Rate at which thirst goes down.
+Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
+
+----------------------------------
 -- stress settings
 ----------------------------------
 Config.StressChance = 0.1 -- Default: 10% -- Percentage Stress Chance When Shooting (0-1)
@@ -20,11 +28,6 @@ Config.HidePlayerDeadEyeNative = true
 Config.HideHorseHealthNative  = true
 Config.HideHorseStaminaNative = true
 Config.HideHorseCourageNative = true
-
-----------------------------------
--- telegrame check settings
-----------------------------------
-Config.TelegramCheck = 5000 -- amount of milliseconds to check your telegrams
 
 ----------------------------------
 -- minimap / compass settings
