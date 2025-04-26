@@ -14,6 +14,7 @@ Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
 Config.StressChance = 0.1 -- Default: 10% -- Percentage Stress Chance When Shooting (0-1)
 Config.MinimumStress = 50 -- Minimum Stress Level For Screen Shaking
 Config.MinimumSpeed = 100 -- Going Over This Speed Will Cause Stress
+Config.StressDecayRate = 0.01 -- Rate at which stress goes down.
 
 ----------------------------------
 -- hud player display settings

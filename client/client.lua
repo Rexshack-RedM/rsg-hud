@@ -79,6 +79,18 @@ local function GetEffectInterval(stresslevel)
     return retval
 end
 
+local function updateNeed(key, value, reduce)
+    if reduce then
+        value = LocalPlayer.state[key] - value
+    end
+
+    value = lib.math.clamp(lib.math.round(value, 2), 0, 100)
+
+    if LocalPlayer.state[key] ~= value then
+        LocalPlayer.state:set(key, value, true)
+    end
+end
+
 ------------------------------------------------
 -- flies when not clean (Config.MinCleanliness)
 ------------------------------------------------
@@ -157,27 +169,28 @@ end
 ------------------------------------------------
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst, newCleanliness)
-    local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
-    LocalPlayer.state.hunger = newHunger
-    LocalPlayer.state.thirst = newThirst
-    LocalPlayer.state.cleanliness = newCleanliness - cleanstats
+    local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+
+    updateNeed('hunger', newHunger)
+    updateNeed('thirst', newThirst)
+    updateNeed('cleanliness', newCleanliness - cleanStats)
 end)
 
 RegisterNetEvent('hud:client:UpdateHunger', function(newHunger)
-    LocalPlayer.state.hunger = lib.math.clamp(newHunger, 0, 100)
+    updateNeed('hunger', newHunger)
 end)
 
 RegisterNetEvent('hud:client:UpdateThirst', function(newThirst)
-    LocalPlayer.state.thirst = lib.math.clamp(newThirst, 0, 100)
+    updateNeed('thirst', newThirst)
 end)
 
 RegisterNetEvent('hud:client:UpdateStress', function(newStress)
-    LocalPlayer.state.stress = lib.math.clamp(newStress, 0, 100)
+    updateNeed('stress', newStress)
 end)
 
 RegisterNetEvent('hud:client:UpdateCleanliness', function(newCleanliness)
-    local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
-    LocalPlayer.state.cleanliness = lib.math.clamp(newCleanliness - cleanstats, 0, 100)
+    local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+    updateNeed('cleanliness', newCleanliness - cleanStats)
 end)
 
 ------------------------------------------------
@@ -363,28 +376,22 @@ end)
 CreateThread(function()
     repeat Wait(100) until LocalPlayer.state.isLoggedIn
 
-    RSGCore.Functions.GetPlayerData(function(playerData)
-        LocalPlayer.state.hunger = playerData.metadata.hunger or 100
-        LocalPlayer.state.thirst = playerData.metadata.thirst or 100
-        LocalPlayer.state.cleanliness = playerData.metadata.cleanliness or 100
-        LocalPlayer.state.stress = playerData.metadata.stress or 0
-    end)
-   
     while true do
         Wait(Config.StatusInterval)
         local playerData = RSGCore.Functions.GetPlayerData()
 
         if LocalPlayer.state.isLoggedIn and not playerData.metadata['isdead'] then
+            local state = LocalPlayer.state
 
             if Config.FlyEffect then
-                FliesSpawn(LocalPlayer.state.cleanliness)
+                FliesSpawn(state.cleanliness)
             end
 
             if Config.DoHealthDamage then
                 local health = GetEntityHealth(cache.ped)
 
                 -- hunger/thirst damage
-                if (LocalPlayer.state.hunger <= 0 or LocalPlayer.state.thirst <= 0) then
+                if (state.hunger <= 0 or state.thirst <= 0) then
                     local decreaseThreshold = math.random(5, 10)
                     PlayPain(cache.ped, 9, 1, true, true)
                     SetEntityHealth(cache.ped, health - decreaseThreshold)
@@ -417,7 +424,7 @@ CreateThread(function()
                 end
     
                 -- cleanliness health damage
-                if LocalPlayer.state.cleanliness <= 0 then
+                if state.cleanliness <= 0 then
                     if Config.DoHealthDamageFx then
                         Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
                     end
@@ -430,21 +437,10 @@ CreateThread(function()
                 end
             end
 
-            local newHunger = LocalPlayer.state.hunger - Config.HungerRate
-            local newThirst = LocalPlayer.state.thirst - Config.ThirstRate
-            local newCleanliness = LocalPlayer.state.cleanliness - Config.CleanlinessRate
-            if newHunger <= 0 then
-                newHunger = 0
-            end
-            if newThirst <= 0 then
-                newThirst = 0
-            end
-            if newCleanliness <= 0 then
-                newCleanliness = 0
-            end
-            LocalPlayer.state.hunger = lib.math.round(newHunger, 2)
-            LocalPlayer.state.thirst = lib.math.round(newThirst, 2)
-            LocalPlayer.state.cleanliness = lib.math.round(newCleanliness, 2)
+            updateNeed('hunger', Config.HungerRate, true)
+            updateNeed('thirst', Config.ThirstRate, true)
+            updateNeed('cleanliness', Config.CleanlinessRate, true)
+            updateNeed('stress', Config.StressDecayRate, true)
         end
     end
 end)
@@ -569,7 +565,7 @@ local function updateStress(amount, isGain)
             local newStress = currentStress + (isGain and amount or -amount)
 
             newStress = lib.math.clamp(newStress, 0, 100)
-            LocalPlayer.state.stress = newStress
+            LocalPlayer.state:set('stress', lib.math.round(newStress, 2), true)
 
             local title = isGain and locale('sv_lang_1') or locale('sv_lang_3')
             lib.notify({ title = title, type = 'inform', duration = 5000 })
