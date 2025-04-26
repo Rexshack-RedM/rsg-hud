@@ -1,15 +1,13 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+lib.locale()
+
 local speed = 0.0
-local stress = 0
-local hunger = 100
-local thirst = 100
 local cashAmount = 0
 local bankAmount = 0
 local showUI = true
 local temperature = 0
 local temp = 0
 local tempadd = 0
-local clean = 0
 
 ------------------------------------------------
 -- hide ui
@@ -79,6 +77,18 @@ local function GetEffectInterval(stresslevel)
         end
     end
     return retval
+end
+
+local function updateNeed(key, value, reduce)
+    if reduce then
+        value = LocalPlayer.state[key] - value
+    end
+
+    value = lib.math.clamp(lib.math.round(value, 2), 0, 100)
+
+    if LocalPlayer.state[key] ~= value then
+        LocalPlayer.state:set(key, value, true)
+    end
 end
 
 ------------------------------------------------
@@ -159,27 +169,28 @@ end
 ------------------------------------------------
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst, newCleanliness)
-    local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
-    hunger = newHunger
-    thirst = newThirst
-    cleanliness = newCleanliness - cleanstats
+    local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+
+    updateNeed('hunger', newHunger)
+    updateNeed('thirst', newThirst)
+    updateNeed('cleanliness', newCleanliness - cleanStats)
 end)
 
 RegisterNetEvent('hud:client:UpdateHunger', function(newHunger)
-    hunger = newHunger
+    updateNeed('hunger', newHunger)
 end)
 
 RegisterNetEvent('hud:client:UpdateThirst', function(newThirst)
-    thirst = newThirst
+    updateNeed('thirst', newThirst)
 end)
 
 RegisterNetEvent('hud:client:UpdateStress', function(newStress)
-    stress = newStress
+    updateNeed('stress', newStress)
 end)
 
 RegisterNetEvent('hud:client:UpdateCleanliness', function(newCleanliness)
-    local cleanstats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
-    cleanliness = newCleanliness - cleanstats
+    local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+    updateNeed('cleanliness', newCleanliness - cleanStats)
 end)
 
 ------------------------------------------------
@@ -187,7 +198,7 @@ end)
 ------------------------------------------------
 CreateThread(function()
     while true do
-        Wait(5000)
+        Wait(30000)
         RSGCore.Functions.TriggerCallback('hud:server:getoutlawstatus', function(result)
             outlawstatus = result[1].outlawstatus
         end)
@@ -246,10 +257,10 @@ CreateThread(function()
                 health = GetEntityHealth(cache.ped) / 6, -- health in red dead max health is 600 so dividing by 6 makes it 100 here
                 stamina = stamina,
                 armor = Citizen.InvokeNative(0x2CE311A7, cache.ped),
-                thirst = thirst,
-                hunger = hunger,
-                cleanliness = cleanliness,
-                stress = stress,
+                thirst = LocalPlayer.state.thirst or 100,
+                hunger = LocalPlayer.state.hunger or 100,
+                cleanliness = LocalPlayer.state.cleanliness or 100,
+                stress = LocalPlayer.state.stress or 0,
                 talking = talking,
                 temp = temperature,
                 onHorse = mounted,
@@ -266,11 +277,6 @@ CreateThread(function()
                 show = false,
             })
         end
-
-        if cleanliness ~= nil and Config.FlyEffect then
-            FliesSpawn(cleanliness)
-        end
-
     end
 end)
 
@@ -368,49 +374,73 @@ end)
 -- health/cleanliness damage
 ------------------------------------------------
 CreateThread(function()
+    repeat Wait(100) until LocalPlayer.state.isLoggedIn
+
     while true do
-        Wait(5000)
-        if LocalPlayer.state.isLoggedIn and Config.DoHealthDamage then
-            health = GetEntityHealth(cache.ped)
+        Wait(Config.StatusInterval)
+        local playerData = RSGCore.Functions.GetPlayerData()
 
-            -- cold health damage
-            if temp < Config.MinTemp then 
-                if Config.DoHealthDamageFx then
-                    Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
-                end
-                if Config.DoHealthPainSound then
+        if LocalPlayer.state.isLoggedIn and not playerData.metadata['isdead'] then
+            local state = LocalPlayer.state
+
+            if Config.FlyEffect then
+                FliesSpawn(state.cleanliness)
+            end
+
+            if Config.DoHealthDamage then
+                local health = GetEntityHealth(cache.ped)
+
+                -- hunger/thirst damage
+                if (state.hunger <= 0 or state.thirst <= 0) then
+                    local decreaseThreshold = math.random(5, 10)
                     PlayPain(cache.ped, 9, 1, true, true)
+                    SetEntityHealth(cache.ped, health - decreaseThreshold)
                 end
-                SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-            elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
-                Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
+
+                -- cold health damage
+                if temp < Config.MinTemp then 
+                    if Config.DoHealthDamageFx then
+                        Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                    end
+                    if Config.DoHealthPainSound then
+                        PlayPain(cache.ped, 9, 1, true, true)
+                    end
+                    SetEntityHealth(cache.ped, health - Config.RemoveHealth)
+                elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
+                    Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
+                end
+    
+                -- hot health damage
+                if temp > Config.MaxTemp then
+                    if Config.DoHealthDamageFx then
+                        Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                    end
+                    if Config.DoHealthPainSound then
+                        PlayPain(cache.ped, 9, 1, true, true)
+                    end
+                    SetEntityHealth(cache.ped, health - Config.RemoveHealth)
+                elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
+                    Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
+                end
+    
+                -- cleanliness health damage
+                if state.cleanliness <= 0 then
+                    if Config.DoHealthDamageFx then
+                        Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                    end
+                    if Config.DoHealthPainSound then
+                        PlayPain(cache.ped, 12, 1, true, true)
+                    end
+                    SetEntityHealth(cache.ped, health - Config.RemoveHealth)
+                elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
+                    Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
+                end
             end
 
-            -- hot health damage
-            if temp > Config.MaxTemp then
-                if Config.DoHealthDamageFx then
-                    Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
-                end
-                if Config.DoHealthPainSound then
-                    PlayPain(cache.ped, 9, 1, true, true)
-                end
-                SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-            elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
-                Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
-            end
-
-            -- cleanliness health damage
-            if cleanliness ~= nil and cleanliness <= 0 then
-                if Config.DoHealthDamageFx then
-                    Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
-                end
-                if Config.DoHealthPainSound then
-                    PlayPain(cache.ped, 12, 1, true, true)
-                end
-                SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-            elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
-                Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
-            end
+            updateNeed('hunger', Config.HungerRate, true)
+            updateNeed('thirst', Config.ThirstRate, true)
+            updateNeed('cleanliness', Config.CleanlinessRate, true)
+            updateNeed('stress', Config.StressDecayRate, true)
         end
     end
 end)
@@ -451,10 +481,10 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
     end)
     SendNUIMessage({
         action = 'update',
-        cash = RSGCore.Shared.Round(cashAmount, 2),
-        bloodmoney = RSGCore.Shared.Round(bloodmoneyAmount, 2),
-        bank = RSGCore.Shared.Round(bankAmount, 2),
-        amount = RSGCore.Shared.Round(amount, 2),
+        cash = lib.math.round(cashAmount, 2),
+        bloodmoney = lib.math.round(bloodmoneyAmount, 2),
+        bank = lib.math.round(bankAmount, 2),
+        amount = lib.math.round(amount, 2),
         minus = isMinus,
         type = type,
     })
@@ -469,7 +499,7 @@ CreateThread(function() -- Speeding
             if IsPedInAnyVehicle(cache.ped, false) then
                 speed = GetEntitySpeed(GetVehiclePedIsIn(cache.ped, false)) * 2.237 --mph
                 if speed >= Config.MinimumSpeed then
-                    TriggerServerEvent('hud:server:GainStress', math.random(1, 3))
+                    TriggerEvent('hud:client:GainStress', math.random(1, 3))
                 end
             end
         end
@@ -485,7 +515,7 @@ CreateThread(function()
         if RSGCore ~= nil  then
             if IsPedShooting(cache.ped) then
                 if math.random() < Config.StressChance then
-                    TriggerServerEvent('hud:server:GainStress', math.random(1, 3))
+                    TriggerEvent('hud:client:GainStress', math.random(1, 3))
                 end
             end
         end
@@ -498,7 +528,7 @@ end)
 ------------------------------------------------
 CreateThread(function()
     while true do
-     
+        local stress = LocalPlayer.state.stress or 0
         local sleep = GetEffectInterval(stress)
 
         if stress >= 100 then
@@ -526,4 +556,27 @@ CreateThread(function()
         end
         Wait(sleep)
     end
+end)
+
+local function updateStress(amount, isGain)
+    RSGCore.Functions.GetPlayerData(function(PlayerData)
+        if not PlayerData.metadata['isdead'] and  (isGain or PlayerData.job.type ~= 'leo') then
+            local currentStress = LocalPlayer.state.stress or 0
+            local newStress = currentStress + (isGain and amount or -amount)
+
+            newStress = lib.math.clamp(newStress, 0, 100)
+            LocalPlayer.state:set('stress', lib.math.round(newStress, 2), true)
+
+            local title = isGain and locale('sv_lang_1') or locale('sv_lang_3')
+            lib.notify({ title = title, type = 'inform', duration = 5000 })
+        end
+    end)
+end
+
+RegisterNetEvent('hud:client:GainStress', function(amount)
+    updateStress(amount, true)
+end)
+
+RegisterNetEvent('hud:client:RelieveStress', function(amount)
+    updateStress(amount, false)
 end)
