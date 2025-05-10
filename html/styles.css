@@ -20,14 +20,14 @@
   #sign {
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #00ac31;
+    color: #ac98009a;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
 
   #signbank {
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #D4AF37;
+    color: #d4af3788;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
   
@@ -35,7 +35,7 @@
     font-size: 50px;
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #00ac31;
+    color: #ac98009a;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
   
@@ -43,14 +43,14 @@
     font-size: 50px;
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #ac0000;
+    color: #ac000084;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
   
   #bank {
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #D4AF37;
+    color: #d4af3787;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
 
@@ -58,14 +58,14 @@
   #money {
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #ffffff;
+    color: #ffffff84;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
   
   #bloodmoney {
     font-family: 'Pricedown Bl', sans-serif;
     text-align: right;
-    color: #b02525;
+    color: #b0252587;
     text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
   }
 
