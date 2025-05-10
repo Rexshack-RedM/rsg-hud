@@ -3,11 +3,13 @@ lib.locale()
 
 local speed = 0.0
 local cashAmount = 0
+local bloodmoneyAmount = 0
 local bankAmount = 0
 local showUI = true
 local temperature = 0
 local temp = 0
 local tempadd = 0
+-- local outlawstatus = 0
 
 ------------------------------------------------
 -- hide ui
@@ -85,7 +87,6 @@ local function updateNeed(key, value, reduce)
     end
 
     value = lib.math.clamp(lib.math.round(value, 2), 0, 100)
-
     if LocalPlayer.state[key] ~= value then
         LocalPlayer.state:set(key, value, true)
     end
@@ -170,7 +171,6 @@ end
 
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst, newCleanliness)
     local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
-
     updateNeed('hunger', newHunger)
     updateNeed('thirst', newThirst)
     updateNeed('cleanliness', newCleanliness - cleanStats)
@@ -233,8 +233,8 @@ CreateThread(function()
             end
 
             -- horse health, stamina & cleanliness
-            local horsehealth = 0 
-            local horsestamina = 0 
+            local horsehealth = 0
+            local horsestamina = 0
             local horseclean = 0
 
             if mounted then
@@ -394,7 +394,13 @@ CreateThread(function()
                 if (state.hunger <= 0 or state.thirst <= 0) then
                     local decreaseThreshold = math.random(5, 10)
                     PlayPain(cache.ped, 9, 1, true, true)
-                    SetEntityHealth(cache.ped, health - decreaseThreshold)
+                    print('-- hunger/thirst damage', health)
+                    print('decreaseThreshold - ',decreaseThreshold '=', health - decreaseThreshold)
+                    if health <= 0 then
+                        SetEntityHealth(cache.ped, 0)
+                    else
+                        SetEntityHealth(cache.ped, health - decreaseThreshold)
+                    end
                 end
 
                 -- cold health damage
@@ -409,7 +415,7 @@ CreateThread(function()
                 elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
-    
+
                 -- hot health damage
                 if temp > Config.MaxTemp then
                     if Config.DoHealthDamageFx then
@@ -422,7 +428,7 @@ CreateThread(function()
                 elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
-    
+
                 -- cleanliness health damage
                 if state.cleanliness <= 0 then
                     if Config.DoHealthDamageFx then
@@ -538,7 +544,7 @@ CreateThread(function()
             ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', ShakeIntensity)
 
             if not IsPedRagdoll(cache.ped) and IsPedOnFoot(cache.ped) and not IsPedSwimming(cache.ped) then
-              
+
                 SetPedToRagdollWithFall(cache.ped, RagdollTimeout, RagdollTimeout, 1, GetEntityForwardVector(cache.ped), 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
             end
 
