@@ -394,11 +394,7 @@ CreateThread(function()
                 if (state.hunger <= 0 or state.thirst <= 0) then
                     local decreaseThreshold = math.random(5, 10)
                     PlayPain(cache.ped, 9, 1, true, true)
-                    if health <= 0 then
-                        SetEntityHealth(cache.ped, 0)
-                    else
-                        SetEntityHealth(cache.ped, health - decreaseThreshold)
-                    end
+                    SetEntityHealth(cache.ped, math.max(0, health - decreaseThreshold))
                 end
 
                 -- cold health damage
@@ -409,11 +405,7 @@ CreateThread(function()
                     if Config.DoHealthPainSound then
                         PlayPain(cache.ped, 9, 1, true, true)
                     end
-                    if health <= 0 then
-                        SetEntityHealth(cache.ped, 0)
-                    else
-                        SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-                    end
+                    SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
                 elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
@@ -426,11 +418,7 @@ CreateThread(function()
                     if Config.DoHealthPainSound then
                         PlayPain(cache.ped, 9, 1, true, true)
                     end
-                    if health <= 0 then
-                        SetEntityHealth(cache.ped, 0)
-                    else
-                        SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-                    end
+                    SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
                 elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
@@ -443,11 +431,7 @@ CreateThread(function()
                     if Config.DoHealthPainSound then
                         PlayPain(cache.ped, 12, 1, true, true)
                     end
-                    if health <= 0 then
-                        SetEntityHealth(cache.ped, 0)
-                    else
-                        SetEntityHealth(cache.ped, health - Config.RemoveHealth)
-                    end
+                    SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
                 elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
                     Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
