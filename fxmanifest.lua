@@ -4,7 +4,7 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 
 description 'rsg-hud'
 version '2.0.5'
-
+ox_lib 'locale'
 shared_scripts {
     '@ox_lib/init.lua',
     'config.lua'
