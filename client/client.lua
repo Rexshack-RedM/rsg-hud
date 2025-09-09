@@ -488,7 +488,7 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
             bloodmoneyAmount = PlayerData.money.bloodmoney or 0
             bankAmount = PlayerData.money.bank or 0
         else
-            print("^3[HUD] Waarschuwing: PlayerData.money is nil^0")
+            print("^3[HUD] Error: PlayerData.money is nil^0")
         end
 
         SendNUIMessage({
