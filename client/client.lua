@@ -474,21 +474,35 @@ end)
 -- on money change
 ------------------------------------------------
 RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
+    -- Only run if player is actually logged in
+    if not LocalPlayer.state.isLoggedIn then
+        return
+    end
+
     RSGCore.Functions.GetPlayerData(function(PlayerData)
-        cashAmount = PlayerData.money.cash
-        bloodmoneyAmount = PlayerData.money.bloodmoney
-        bankAmount = PlayerData.money.bank
+        local cashAmount = 0
+        local bloodmoneyAmount = 0
+        local bankAmount = 0
+
+        if PlayerData and PlayerData.money then
+            cashAmount = PlayerData.money.cash or 0
+            bloodmoneyAmount = PlayerData.money.bloodmoney or 0
+            bankAmount = PlayerData.money.bank or 0
+        end
+
+        SendNUIMessage({
+            action = 'update',
+            cash = lib.math.round(cashAmount, 2),
+            bloodmoney = lib.math.round(bloodmoneyAmount, 2),
+            bank = lib.math.round(bankAmount, 2),
+            amount = lib.math.round(amount or 0, 2),
+            minus = isMinus or false,
+            type = type or "unknown",
+        })
     end)
-    SendNUIMessage({
-        action = 'update',
-        cash = lib.math.round(cashAmount, 2),
-        bloodmoney = lib.math.round(bloodmoneyAmount, 2),
-        bank = lib.math.round(bankAmount, 2),
-        amount = lib.math.round(amount, 2),
-        minus = isMinus,
-        type = type,
-    })
 end)
+
+
 
 ------------------------------------------------
 -- stress gain when speeding
