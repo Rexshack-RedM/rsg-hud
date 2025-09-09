@@ -474,9 +474,8 @@ end)
 -- on money change
 ------------------------------------------------
 RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
-    -- Only run if player is actually logged in
-    if not LocalPlayer.state.isLoggedIn then
-        return
+    while not LocalPlayer.state.isLoggedIn do
+        Wait(100)
     end
 
     RSGCore.Functions.GetPlayerData(function(PlayerData)
@@ -488,6 +487,8 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
             cashAmount = PlayerData.money.cash or 0
             bloodmoneyAmount = PlayerData.money.bloodmoney or 0
             bankAmount = PlayerData.money.bank or 0
+        else
+            print("^3[HUD] Waarschuwing: PlayerData.money is nil^0")
         end
 
         SendNUIMessage({
@@ -501,6 +502,7 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
         })
     end)
 end)
+
 
 
 
