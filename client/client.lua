@@ -446,6 +446,22 @@ CreateThread(function()
 end)
 
 ------------------------------------------------
+-- player dirt status update loop
+------------------------------------------------
+CreateThread(function()
+    repeat Wait(100) until LocalPlayer.state.isLoggedIn
+    while true do
+        Wait(Config.StatusInterval)
+        local playerData = RSGCore.Functions.GetPlayerData()
+        if LocalPlayer.state.isLoggedIn and not playerData.metadata['isdead'] then
+            local cleanStats = Citizen.InvokeNative(0x147149F2E909323C, cache.ped, 16, Citizen.ResultAsInteger())
+            local newDirtStatus = 100 - cleanStats
+            updateNeed('cleanliness', newDirtStatus)
+        end
+    end
+end)
+
+------------------------------------------------
 -- money hud
 ------------------------------------------------
 RegisterNetEvent('hud:client:ShowAccounts', function(type, amount)
