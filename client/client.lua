@@ -12,6 +12,42 @@ local tempadd = 0
 -- local outlawstatus = 0
 
 ------------------------------------------------
+-- send locales to NUI
+------------------------------------------------
+local function sendLocalesToNUI()
+    local locales = {
+        edit_mode_on_title = locale('edit_mode_on_title'),
+        edit_mode_on_desc = locale('edit_mode_on_desc'),
+        edit_mode_off_desc = locale('edit_mode_off_desc'),
+        reset_hud_title = locale('reset_hud_title'),
+        reset_hud_desc = locale('reset_hud_desc'),
+        money_hud_label = locale('money_hud_label'),
+        temp_label = locale('temp_label'),
+        health_label = locale('health_label'),
+        stamina_label = locale('stamina_label'),
+        hunger_label = locale('hunger_label'),
+        thirst_label = locale('thirst_label'),
+        clean_label = locale('clean_label'),
+        stress_label = locale('stress_label'),
+        mail_label = locale('mail_label'),
+        horse_health_label = locale('horse_health_label'),
+        horse_stamina_label = locale('horse_stamina_label'),
+        horse_clean_label = locale('horse_clean_label')
+    }
+    
+    SendNUIMessage({
+        action = 'setLocales',
+        locales = locales
+    })
+end
+
+-- Send locales when resource starts
+CreateThread(function()
+    Wait(1000)
+    sendLocalesToNUI()
+end)
+
+------------------------------------------------
 -- hide ui
 ------------------------------------------------
 RegisterNetEvent("HideAllUI")
@@ -270,6 +306,7 @@ CreateThread(function()
                 voice = voice,
                 youhavemail = LocalPlayer.state.telegramUnreadMessages or 0 > 0,
                 outlawstatus = outlawstatus,
+                iconColors = Config.IconColors, -- Send config colors
             })
         else
             SendNUIMessage({
@@ -596,3 +633,74 @@ end)
 RegisterNetEvent('hud:client:RelieveStress', function(amount)
     updateStress(amount, false)
 end)
+
+------------------------------------------------
+-- hud edit mode toggle
+------------------------------------------------
+local editMode = false
+
+RegisterNetEvent('hud:client:ToggleEditMode', function()
+    editMode = not editMode
+    SendNUIMessage({
+        action = 'toggleEditMode',
+        enabled = editMode
+    })
+    if editMode then
+        -- Enable mouse cursor for dragging
+        SetNuiFocus(true, true)
+        SetNuiFocusKeepInput(false)
+        lib.notify({
+            title = locale('edit_mode_on_title'),
+            description = locale('edit_mode_on_desc'),
+            type = 'success',
+            duration = 5000
+        })
+    else
+        -- Disable mouse cursor
+        SetNuiFocus(false, false)
+        lib.notify({
+            title = locale('edit_mode_on_title'),
+            description = locale('edit_mode_off_desc'),
+            type = 'inform',
+            duration = 3000
+        })
+    end
+end)
+
+-- Command to toggle HUD edit mode
+RegisterCommand('edithud', function()
+    TriggerEvent('hud:client:ToggleEditMode')
+end, false)
+
+-- Command to reset HUD positions
+RegisterCommand('resethud', function()
+    SendNUIMessage({
+        action = 'resetPositions'
+    })
+    lib.notify({
+        title = locale('reset_hud_title'),
+        description = locale('reset_hud_desc'),
+        type = 'success',
+        duration = 3000
+    })
+end, false)
+
+-- NUI Callback to disable edit mode (when ESC is pressed or NUI loses focus)
+RegisterNUICallback('disableEditMode', function(data, cb)
+    if editMode then
+        editMode = false
+        SetNuiFocus(false, false)
+        SendNUIMessage({
+            action = 'toggleEditMode',
+            enabled = false
+        })
+        lib.notify({
+            title = locale('edit_mode_on_title'),
+            description = locale('edit_mode_off_desc'),
+            type = 'inform',
+            duration = 3000
+        })
+    end
+    cb('ok')
+end)
+

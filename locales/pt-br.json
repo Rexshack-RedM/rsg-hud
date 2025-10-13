@@ -1,5 +1,23 @@
 {
-    "sv_lang_1" : "Você está ficando estressado",
-    "sv_lang_2" : "Você está com um pouco de sede",
-    "sv_lang_3" : "Você está se sentindo aliviado do estresse"
+    "sv_lang_1": "Você está ficando estressado",
+    "sv_lang_2": "Você está com um pouco de sede",
+    "sv_lang_3": "Você está se sentindo aliviado do estresse",
+    "edit_mode_on_title": "Modo de Edição HUD",
+    "edit_mode_on_desc": "ATIVADO - Clique e arraste os elementos do HUD para reposicioná-los",
+    "edit_mode_off_desc": "DESATIVADO",
+    "reset_hud_title": "Redefinir HUD",
+    "reset_hud_desc": "Posições do HUD redefinidas para o padrão",
+    "money_hud_label": "💰 HUD Dinheiro",
+    "temp_label": "🌡️ Temp",
+    "health_label": "❤️ Saúde",
+    "stamina_label": "⚡ Resistência",
+    "hunger_label": "🍎 Fome",
+    "thirst_label": "💧 Sede",
+    "clean_label": "🛁 Limpeza",
+    "stress_label": "🧠 Estresse",
+    "mail_label": "✉️ Correio",
+    "horse_health_label": "🐎❤️ Saúde Cavalo",
+    "horse_stamina_label": "🐎⚡ Resistência Cavalo",
+    "horse_clean_label": "🐎🛁 Limpeza Cavalo"
 }
+

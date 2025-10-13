@@ -1,5 +1,22 @@
 {
     "sv_lang_1" : "Vous êtes en train de stresser",
     "sv_lang_2" : "Vous avez un peu soif",
-    "sv_lang_3" : "Vous vous sentez soulagé du stress"
+    "sv_lang_3" : "Vous vous sentez soulagé du stress",
+    "edit_mode_on_title": "Mode Édition HUD",
+    "edit_mode_on_desc": "ACTIVÉ - Cliquez et faites glisser les éléments du HUD pour les repositionner",
+    "edit_mode_off_desc": "DÉSACTIVÉ",
+    "reset_hud_title": "Réinitialisation HUD",
+    "reset_hud_desc": "Positions du HUD réinitialisées par défaut",
+    "money_hud_label": "💰 HUD Argent",
+    "temp_label": "🌡️ Temp",
+    "health_label": "❤️ Santé",
+    "stamina_label": "⚡ Endurance",
+    "hunger_label": "🍎 Faim",
+    "thirst_label": "💧 Soif",
+    "clean_label": "🛁 Propreté",
+    "stress_label": "🧠 Stress",
+    "mail_label": "✉️ Courrier",
+    "horse_health_label": "🐎❤️ Santé Cheval",
+    "horse_stamina_label": "🐎⚡ Endurance Cheval",
+    "horse_clean_label": "🐎🛁 Propreté Cheval"
 }

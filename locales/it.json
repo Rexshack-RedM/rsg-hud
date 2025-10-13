@@ -1,5 +1,22 @@
 {
-    "sv_lang_1" : "Ti stai stressando",
-    "sv_lang_2" : "Hai un po' di sete",
-    "sv_lang_3" : "need to be added"
+    "sv_lang_1": "Ti stai stressando",
+    "sv_lang_2": "Hai un po' di sete",
+    "sv_lang_3": "Ti senti sollevato dallo stress",
+    "edit_mode_on_title": "Modalità Modifica HUD",
+    "edit_mode_on_desc": "ATTIVO - Clicca e trascina gli elementi del HUD per riposizionarli",
+    "edit_mode_off_desc": "DISATTIVO",
+    "reset_hud_title": "Reset HUD",
+    "reset_hud_desc": "Posizioni HUD ripristinate ai valori predefiniti",
+    "money_hud_label": "💰 HUD Denaro",
+    "temp_label": "🌡️ Temp",
+    "health_label": "❤️ Salute",
+    "stamina_label": "⚡ Resistenza",
+    "hunger_label": "🍎 Fame",
+    "thirst_label": "💧 Sete",
+    "clean_label": "🛁 Pulizia",
+    "stress_label": "🧠 Stress",
+    "mail_label": "✉️ Posta",
+    "horse_health_label": "🐎❤️ Salute Cavallo",
+    "horse_stamina_label": "🐎⚡ Resistenza Cavallo",
+    "horse_clean_label": "🐎🛁 Pulizia Cavallo"
 }

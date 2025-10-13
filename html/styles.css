@@ -7,6 +7,20 @@
     height: auto;
 }
 
+/* Prevent scrollbars and ensure proper viewport */
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 /* Money */
 
 #money-container {
@@ -73,8 +87,8 @@
 
 #playerhud {
     position: fixed;
-    left: 1vh;
-    bottom: 2.5vw;
+    left: 0vh;
+    bottom: 0.5vw;
     display: internal;
 }
 
@@ -97,3 +111,174 @@
     transform: translateX(20px);
     opacity: 0;
 }
+
+/* Draggable HUD Elements */
+
+.draggable-element {
+    position: relative;
+}
+
+.draggable-element.edit-mode {
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.draggable-element.dragging {
+    border-color: #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+    z-index: 9999;
+}
+
+.drag-handle {
+    position: absolute;
+    top: -25px;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-family: 'Work Sans', sans-serif;
+    border-radius: 4px;
+    cursor: move;
+    user-select: none;
+    z-index: 1000;
+    white-space: nowrap;
+}
+
+.drag-handle:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.draggable-element.edit-mode .drag-handle {
+    display: block !important;
+}
+
+.draggable-element:not(.edit-mode) .drag-handle {
+    display: none !important;
+}
+
+/* Individual Status Circle Draggable Elements */
+
+.status-circle {
+    display: inline-block;
+    position: relative;
+    transition: transform 0.1s ease;
+}
+
+.status-circle.edit-mode {
+    /* Remove visual container - no borders, background, or padding */
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.status-circle.dragging {
+    border-color: #00ff00;
+    background-color: rgba(0, 255, 0, 0.15);
+    z-index: 9999;
+    position: fixed !important;
+    max-width: 100vw;
+    max-height: 100vh;
+}
+
+.status-circle .drag-handle {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-family: 'Work Sans', sans-serif;
+    border-radius: 3px;
+    cursor: move;
+    user-select: none;
+    z-index: 1001;
+    white-space: nowrap;
+    font-weight: 500;
+    pointer-events: auto;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-circle .drag-handle:hover {
+    background-color: rgba(0, 0, 0, 1);
+}
+
+/* Special handling for voice element that toggles visibility */
+.status-circle[data-element="voice"] {
+    transition: opacity 0.2s ease;
+}
+
+.status-circle[data-element="voice"].edit-mode {
+    opacity: 1 !important; /* Always visible in edit mode */
+    pointer-events: all !important;
+}
+
+/* Make status circles show they're draggable in edit mode */
+.status-circle.edit-mode {
+    cursor: move;
+}
+
+.status-circle.edit-mode:hover {
+    filter: brightness(1.1);
+}
+
+/* Resize Handle for Status Circles */
+.resize-handle {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    background-color: rgba(0, 255, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 1);
+    border-radius: 50%;
+    cursor: nw-resize;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6px;
+    color: white;
+    user-select: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.resize-handle:hover {
+    background-color: rgba(0, 255, 0, 1);
+    transform: scale(1.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.resize-handle::before {
+    content: '⌟';
+    font-size: 10px;
+    font-weight: bold;
+    transform: rotate(180deg);
+}
+
+/* Resizing state */
+.status-circle.resizing {
+    border-color: #00ff00;
+    background-color: rgba(0, 255, 0, 0.1);
+    z-index: 9999;
+}
+
+/* Original container positioning when elements are not dragged */
+#ui-container {
+    position: fixed;
+    left: 1vh;
+    bottom: 2.5vw;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+}
+

@@ -11,7 +11,8 @@
 
 <body>
     <div id="main-container">
-        <div id="money-container">
+        <div id="money-container" class="draggable-element" data-element="money">
+            <div class="drag-handle" v-show="editMode">{{ locales.money_hud_label }}</div>
             <div id="money-cash">
                 <transition name="slide-fade">
             <p v-if="showCash"><span id="sign">$&nbsp;</span><span id="money">{{(cash)}}</span></p>
@@ -34,67 +35,127 @@
         </div>
         <span>
             <div id="ui-container">
-                <div id="playerHud" v-show="show">
-                    <transition name="fade">
-                    <div v-if="showVoice">
-                        <q-circular-progress show-value :value="voice" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10" :min="0" :max="100">
-                        <q-circular-progress show-value :value="voice" size="3.75vh" :thickness="0.24" :style="{color: talkingColor}" :min="0" :max="6" center-color="grey-10">
-                        <q-icon name="fas fa-microphone" size="19.5px" :style="{color: talkingColor}" />
-                    </div>
-                    </transition>
-                    <div v-if="showoutlawstatus">
-                        <q-circular-progress class="progress" show-value :value="showoutlawstatus" size="3.75vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-mask" size="19px" :style="{color: showOutLawColor}" />
-                    </div>
-                    <div v-if="showTemp">
-                        <q-circular-progress class="progress" show-value :value="temp" size="3.75vh" :thickness="0.22" color="white" track-color="grey-8" center-color="gray-10">
-                          <template v-slot:default>
-                            <div class="text-white" style="font-family: crock">{{ temp }}</div>
-                          </template>
-                        </q-circular-progress>
-                    </div>
-                    <div v-if="showHealth">
-                        <q-circular-progress class="progress" show-value :value="health" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-heartbeat" size="19px" :style="{color: showHealthColor}" />
-                    </div>
-                    <div v-if="showStamina">
-                        <q-circular-progress class="progress" show-value :value="stamina" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-bolt" size="19px" :style="{color: showStaminaColor}" />
-                    </div>
-                    <div v-if="showHunger">
-                        <q-circular-progress class="progress" show-value :value="hunger" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-apple-alt" size="19px" :style="{color: showHungerColor}" />
-                    </div>
-                    <div v-if="showThirst">
-                        <q-circular-progress class="progress" show-value :value="thirst" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-tint" size="19px" :style="{color: showThirstColor}" />
-                    </div>
-                    <div v-if="showCleanliness">
-                        <q-circular-progress class="progress" show-value :value="cleanliness" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-bath" size="19px" :style="{color: showCleanlinessColor}" />
-                    </div>
-                    <div v-if="showStress">
-                        <q-circular-progress class="progress" show-value :value="stress" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                        <q-icon name="fas fa-brain" size="19px" color="white" />
-                    </div>
-                    <div v-if="showYouHaveMail">
-                        <q-circular-progress class="progress" show-value :value="youhavemail" size="3.75vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
-                        <q-icon name="far fa-envelope" size="19px" :style="{color: showYouHaveMailColor}" />
-                    </div>
-                    <div v-if="showHorseHealth">
-                        <q-circular-progress class="progress" show-value :value="horsehealth" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                            <q-icon name="fas fa-heart" size="19px" :style="{color: showHorseHealthColor}" />
-                    </div>
-                    <div v-if="showHorseStamina">
-                        <q-circular-progress class="progress" show-value :value="horsestamina" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                            <q-icon name="fas fa-bolt" size="19px" :style="{color: showHorseStaminaColor}" />
-                    </div>
-                    <div v-if="showHorseClean">
-                        <q-circular-progress class="progress" show-value :value="horseclean" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                            <q-icon name="fas fa-bath" size="19px" :style="{color: showHorseStaminaColor}" />
-                    </div>
-                </div>
-            </div>
+    <div id="playerHud" v-show="show">
+        <!-- Voice (already uses opacity, no change) -->
+        <div class="draggable-element status-circle" data-element="voice" :style="{opacity: showVoice ? 1 : (editMode ? 0.3 : 0)}">
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress show-value :value="voice" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10" :min="0" :max="100">
+                <q-circular-progress show-value :value="voice" size="3.75vh" :thickness="0.24" :style="{color: talkingColor}" :min="0" :max="6" center-color="grey-10">
+                    <q-icon name="fas fa-microphone" size="19.5px" :style="{color: talkingColor}" />
+                </q-circular-progress>
+            </q-circular-progress>
+        </div>
+        
+        <!-- Outlaw: Change v-if to v-show -->
+        <div v-show="showoutlawstatus" class="draggable-element status-circle" data-element="outlaw">
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="showoutlawstatus" size="3.75vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-mask" size="19px" :style="{color: showOutLawColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Temp: Already always true, but use v-show for consistency -->
+        <div v-show="showTemp" class="draggable-element status-circle" data-element="temp">
+            <div class="drag-handle" v-show="editMode">{{ locales.temp_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="temp" size="3.75vh" :thickness="0.22" color="white" track-color="grey-8" center-color="gray-10">
+              <template v-slot:default>
+                <div class="text-white" style="font-family: crock">{{ temp }}</div>
+              </template>
+            </q-circular-progress>
+        </div>
+        
+        <!-- Health: Change v-if to v-show -->
+        <div v-show="showHealth" class="draggable-element status-circle" data-element="health">
+            <div class="drag-handle" v-show="editMode">{{ locales.health_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="health" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-heartbeat" size="19px" :style="{color: showHealthColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Stamina: Change v-if to v-show -->
+        <div v-show="showStamina" class="draggable-element status-circle" data-element="stamina">
+            <div class="drag-handle" v-show="editMode">{{ locales.stamina_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="stamina" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-bolt" size="19px" :style="{color: showStaminaColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Hunger: Change v-if to v-show -->
+        <div v-show="showHunger" class="draggable-element status-circle" data-element="hunger">
+            <div class="drag-handle" v-show="editMode">{{ locales.hunger_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="hunger" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-apple-alt" size="19px" :style="{color: showHungerColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Thirst: Change v-if to v-show -->
+        <div v-show="showThirst" class="draggable-element status-circle" data-element="thirst">
+            <div class="drag-handle" v-show="editMode">{{ locales.thirst_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="thirst" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-tint" size="19px" :style="{color: showThirstColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Cleanliness: Change v-if to v-show -->
+        <div v-show="showCleanliness" class="draggable-element status-circle" data-element="cleanliness">
+            <div class="drag-handle" v-show="editMode">{{ locales.clean_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="cleanliness" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-bath" size="19px" :style="{color: showCleanlinessColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Stress: Change v-if to v-show -->
+        <div v-show="showStress" class="draggable-element status-circle" data-element="stress">
+            <div class="drag-handle" v-show="editMode">{{ locales.stress_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="stress" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-brain" size="19px" color="white" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Mail: Change v-if to v-show -->
+        <div v-show="showYouHaveMail" class="draggable-element status-circle" data-element="mail">
+            <div class="drag-handle" v-show="editMode">{{ locales.mail_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="youhavemail" size="3.75vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
+                <q-icon name="far fa-envelope" size="19px" :style="{color: showYouHaveMailColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Horse Health: Change v-if to v-show -->
+        <div v-show="showHorseHealth" class="draggable-element status-circle" data-element="horse-health">
+            <div class="drag-handle" v-show="editMode">{{ locales.horse_health_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="horsehealth" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-heart" size="19px" :style="{color: showHorseHealthColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Horse Stamina: Change v-if to v-show -->
+        <div v-show="showHorseStamina" class="draggable-element status-circle" data-element="horse-stamina">
+            <div class="drag-handle" v-show="editMode">{{ locales.horse_stamina_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="horsestamina" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-bolt" size="19px" :style="{color: showHorseStaminaColor}" />
+            </q-circular-progress>
+        </div>
+        
+        <!-- Horse Clean: Change v-if to v-show -->
+        <div v-show="showHorseClean" class="draggable-element status-circle" data-element="horse-clean">
+            <div class="drag-handle" v-show="editMode">{{ locales.horse_clean_label }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <q-circular-progress class="progress" show-value :value="horseclean" size="3.75vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
+                <q-icon name="fas fa-bath" size="19px" :style="{color: showHorseStaminaColor}" />
+            </q-circular-progress>
+        </div>
+    </div>
+</div>
         </span>
     </div>
 </body>

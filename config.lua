@@ -151,3 +151,63 @@ Config.EffectInterval = {
         timeout = math.random(15000, 20000)
     }
 }
+
+----------------------------------
+-- HUD icon colors configuration
+----------------------------------
+Config.IconColors = {
+    -- Player Status Icons
+    ['voice'] = {
+        normal = '#FFFFFF',      -- White when not talking
+        active = '#FF0000'       -- Red when talking
+    },
+    ['health'] = {
+        normal = '#FFFFFF',      -- White when healthy
+        low = '#FF0000'          -- Red when low health (<=30%)
+    },
+    ['stamina'] = {
+        normal = '#FFFFFF',      -- White when full
+        low = '#FF0000'          -- Red when low stamina (<=30%)
+    },
+    ['hunger'] = {
+        normal = '#FFFFFF',      -- White when full
+        low = '#FF0000'          -- Red when low hunger (<=30%)
+    },
+    ['thirst'] = {
+        normal = '#FFFFFF',      -- White when full
+        low = '#FF0000'          -- Red when low thirst (<=30%)
+    },
+    ['cleanliness'] = {
+        normal = '#FFFFFF',      -- White when clean
+        low = '#FF0000'          -- Red when dirty (<=30%)
+    },
+    ['stress'] = {
+        normal = '#FFFFFF',      -- White (stress icon color)
+    },
+    ['temp'] = {
+        cold = '#FDD021',        -- Yellow when cold (<=30)
+        normal = '#CFBCAE'       -- Light brown when normal
+    },
+    ['mail'] = {
+        normal = '#FFFFFF',      -- White when no mail
+        hasmail = '#FFD700'      -- Gold when has mail
+    },
+    ['outlaw'] = {
+        normal = '#00FF00',      -- Green when not outlaw
+        active = '#FF0000'       -- Red when outlaw
+    },
+    
+    -- Horse Status Icons
+    ['horse_health'] = {
+        normal = '#a16600',      -- Brown/orange for horse health
+        low = '#FF0000'          -- Red when low
+    },
+    ['horse_stamina'] = {
+        normal = '#a16600',      -- Brown/orange for horse stamina
+        low = '#FF0000'          -- Red when low
+    },
+    ['horse_clean'] = {
+        normal = '#a16600',      -- Brown/orange for horse cleanliness
+        low = '#FF0000'          -- Red when dirty
+    }
+}
