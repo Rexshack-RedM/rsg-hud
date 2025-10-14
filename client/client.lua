@@ -304,6 +304,7 @@ CreateThread(function()
                 horsestamina = horsestamina,
                 horseclean = horseclean,
                 voice = voice,
+                voiceAlwaysVisible = Config.VoiceAlwaysVisible,
                 youhavemail = LocalPlayer.state.telegramUnreadMessages or 0 > 0,
                 outlawstatus = outlawstatus,
                 iconColors = Config.IconColors, -- Send config colors

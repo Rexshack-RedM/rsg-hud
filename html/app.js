@@ -320,11 +320,16 @@ const playerHud = {
                 }
             }
             
-            // Voice visibility (always update)
-            if (data.talking) {
-                this.showVoice = true;
+            // Voice visibility - configurable
+            if (data.voiceAlwaysVisible) {
+                this.showVoice = true;  // Always visible if config enabled
             } else {
-                this.showVoice = false;
+                // Only visible when talking if config disabled
+                if (data.talking) {
+                    this.showVoice = true;
+                } else {
+                    this.showVoice = false;
+                }
             }
             if (data.talking) {
                 this.talkingColor = this.iconColors.voice?.active || "#FF0000";
