@@ -31,6 +31,11 @@ Config.HideHorseStaminaNative = true
 Config.HideHorseCourageNative = true
 
 ----------------------------------
+-- voice icon settings
+----------------------------------
+Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when talking
+
+----------------------------------
 -- minimap / compass settings
 ----------------------------------
 Config.OnFootMinimap = false -- set to true/false to disable/enable minimap when on foot
