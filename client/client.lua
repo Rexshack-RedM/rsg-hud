@@ -9,6 +9,7 @@ local showUI = true
 local temperature = 0
 local temp = 0
 local tempadd = 0
+local isWeapon = false
 -- local outlawstatus = 0
 
 ------------------------------------------------
@@ -95,6 +96,21 @@ end)
 ------------------------------------------------
 -- functions
 ------------------------------------------------
+local function updateStress(amount, isGain)
+    RSGCore.Functions.GetPlayerData(function(PlayerData)
+        if not PlayerData.metadata['isdead'] and  (isGain or PlayerData.job.type ~= 'leo') then
+            local currentStress = LocalPlayer.state.stress or 0
+            local newStress = currentStress + (isGain and amount or -amount)
+
+            newStress = lib.math.clamp(newStress, 0, 100)
+            LocalPlayer.state:set('stress', lib.math.round(newStress, 2), true)
+
+            local title = isGain and locale('sv_lang_1') or locale('sv_lang_3')
+            lib.notify({ title = title, type = 'inform', duration = 5000 })
+        end
+    end)
+end
+
 local function GetShakeIntensity(stresslevel)
     local retval = 0.05
     for _, v in pairs(Config.Intensity['shake']) do
@@ -564,17 +580,24 @@ end)
 ------------------------------------------------
 -- stress gained while shooting
 ------------------------------------------------
-CreateThread(function()
-    while true do
-        if RSGCore ~= nil  then
-            if IsPedShooting(cache.ped) then
+lib.onCache('weapon', function(weapon)
+    local player = PlayerPedId()
+    if weapon ~= -1569615261 then -- Hash (-1569615261) for bare hands
+        isWeapon = true
+    else
+        isWeapon = false
+    end
+    CreateThread(function()
+        while isWeapon do
+            local isShooting = IsPedShooting(player)
+            if isShooting then
                 if math.random() < Config.StressChance then
                     TriggerEvent('hud:client:GainStress', math.random(1, 3))
                 end
             end
+            Wait(0)
         end
-        Wait(6)
-    end
+    end)
 end)
 
 ------------------------------------------------
@@ -611,21 +634,6 @@ CreateThread(function()
         Wait(sleep)
     end
 end)
-
-local function updateStress(amount, isGain)
-    RSGCore.Functions.GetPlayerData(function(PlayerData)
-        if not PlayerData.metadata['isdead'] and  (isGain or PlayerData.job.type ~= 'leo') then
-            local currentStress = LocalPlayer.state.stress or 0
-            local newStress = currentStress + (isGain and amount or -amount)
-
-            newStress = lib.math.clamp(newStress, 0, 100)
-            LocalPlayer.state:set('stress', lib.math.round(newStress, 2), true)
-
-            local title = isGain and locale('sv_lang_1') or locale('sv_lang_3')
-            lib.notify({ title = title, type = 'inform', duration = 5000 })
-        end
-    end)
-end
 
 RegisterNetEvent('hud:client:GainStress', function(amount)
     updateStress(amount, true)
