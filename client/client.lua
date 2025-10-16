@@ -592,7 +592,7 @@ lib.onCache('weapon', function(weapon)
             local isShooting = IsPedShooting(player)
             if isShooting then
                 if math.random() < Config.StressChance then
-                    TriggerEvent('hud:client:GainStress', math.random(1, 3))
+                    updateStress(math.random(1, 3), true)
                 end
             end
             Wait(0)
