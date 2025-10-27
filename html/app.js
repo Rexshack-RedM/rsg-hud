@@ -170,7 +170,14 @@ const playerHud = {
             editMode: false,
             iconColors: {}, // Store config colors
             savedVisibility: null, // Store visibility states for edit mode
-            locales: {} // Store locale translations
+            locales: {}, // Store locale translations
+            logoConfig: {
+                showLogo: false,
+                logoPosition: 'top-left',
+                logoName: 'logoEx.png',
+                logoSize: 200,
+                logoOpacity: 1.0
+            }
         }
     },
     destroyed() {
@@ -184,12 +191,15 @@ const playerHud = {
                 this.toggleEditMode(event.data.enabled);
             } else if (event.data.action === 'setLocales') {
                 this.locales = event.data.locales;
+            } else if (event.data.action === 'setLogoConfig') {
+                this.logoConfig = event.data.logoConfig;
             }
         });
     },
     methods: {
         hudTick(data) {
             this.show = data.show;
+            
             this.health = data.health;
             this.stamina = parseInt(data.stamina);
             this.armor = data.armor;
@@ -203,6 +213,7 @@ const playerHud = {
             this.outlawstatus = data.outlawstatus;
             this.talking = data.talking;
             
+            this.logoConfig.showLogo = data.show;
             // Don't modify horse visibility if in edit mode
             if (!this.editMode) {
                 this.showHorseStamina = data.onHorse;
@@ -824,27 +835,3 @@ window.resetHUDPositions = () => {
     hudDragSystem.resetToDefaults();
 };
 
-// LOGO APP
-const logoApp = Vue.createApp({
-    data() {
-        return {
-            logoConfig: {
-                showLogo: false,
-                logoPosition: 'top-left',
-                logoName: 'logoEx.png',
-                logoSize: 200,
-                logoOpacity: 1.0
-            }
-        }
-    },
-    destroyed() {
-        window.removeEventListener('message', this.listener);
-    },
-    mounted() {
-        this.listener = window.addEventListener('message', (event) => {
-            if (event.data.action === 'setLogoConfig') {
-                this.logoConfig = event.data.logoConfig;
-            }
-        });
-    }
-}).mount('#logo-app');

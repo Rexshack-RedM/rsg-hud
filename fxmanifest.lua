@@ -32,7 +32,8 @@ files {
     'html/index.html',
     'html/styles.css',
     'html/app.js',
-    'locales/*.json'
+    'locales/*.json',
+    'html/assets/*.png',
 }
 
 lua54 'yes'

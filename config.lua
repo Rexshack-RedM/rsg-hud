@@ -227,9 +227,9 @@ Config.IconColors              = {
 -- Place your logo file in: /html/assets/
 ----------------------------------
 Config.Logo                    = {
-    showLogo = true,           -- true = show logo, false = hide logo
-    logoPosition = 'top-left', -- Logo position (see options above)
-    logoName = 'logoEx.png',   -- Name of logo file in /html/assets/
-    logoSize = 200,            -- Logo width in pixels (height scales automatically, min: 50, max: 500)
-    logoOpacity = 1.0          -- Logo transparency (0.0 = invisible, 1.0 = fully visible)
+    showLogo = true,            -- true = show logo, false = hide logo
+    logoPosition = 'top-right', -- Logo position (see options above)
+    logoName = 'logoEx.png',    -- Name of logo file in /html/assets/
+    logoSize = 100,              -- Logo width in pixels (height scales automatically, min: 50, max: 500)
+    logoOpacity = 1.0           -- Logo transparency (0.0 = invisible, 1.0 = fully visible)
 }
