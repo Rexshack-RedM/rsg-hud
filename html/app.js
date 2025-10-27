@@ -823,3 +823,28 @@ const hudDragSystem = new HUDDragSystem();
 window.resetHUDPositions = () => {
     hudDragSystem.resetToDefaults();
 };
+
+// LOGO APP
+const logoApp = Vue.createApp({
+    data() {
+        return {
+            logoConfig: {
+                showLogo: false,
+                logoPosition: 'top-left',
+                logoName: 'logoEx.png',
+                logoSize: 200,
+                logoOpacity: 1.0
+            }
+        }
+    },
+    destroyed() {
+        window.removeEventListener('message', this.listener);
+    },
+    mounted() {
+        this.listener = window.addEventListener('message', (event) => {
+            if (event.data.action === 'setLogoConfig') {
+                this.logoConfig = event.data.logoConfig;
+            }
+        });
+    }
+}).mount('#logo-app');

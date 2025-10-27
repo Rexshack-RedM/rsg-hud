@@ -1,20 +1,20 @@
-Config = {}
+Config                         = {}
 
 ----------------------------------
 -- needs settings
 ----------------------------------
-Config.StatusInterval = 5000 -- how often to update hunger/thirst status in milliseconds
-Config.HungerRate = 0.10 -- Rate at which hunger goes down.
-Config.ThirstRate = 0.15 -- Rate at which thirst goes down.
-Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
+Config.StatusInterval          = 5000 -- how often to update hunger/thirst status in milliseconds
+Config.HungerRate              = 0.10 -- Rate at which hunger goes down.
+Config.ThirstRate              = 0.15 -- Rate at which thirst goes down.
+Config.CleanlinessRate         = 0.01 -- Rate at which cleanliness goes down.
 
 ----------------------------------
 -- stress settings
 ----------------------------------
-Config.StressChance = 0.1 -- Default: 10% -- Percentage Stress Chance When Shooting (0-1)
-Config.MinimumStress = 50 -- Minimum Stress Level For Screen Shaking
-Config.MinimumSpeed = 100 -- Going Over This Speed Will Cause Stress
-Config.StressDecayRate = 0.01 -- Rate at which stress goes down.
+Config.StressChance            = 0.1  -- Default: 10% -- Percentage Stress Chance When Shooting (0-1)
+Config.MinimumStress           = 50   -- Minimum Stress Level For Screen Shaking
+Config.MinimumSpeed            = 100  -- Going Over This Speed Will Cause Stress
+Config.StressDecayRate         = 0.01 -- Rate at which stress goes down.
 
 ----------------------------------
 -- hud player display settings
@@ -26,80 +26,80 @@ Config.HidePlayerDeadEyeNative = true
 ----------------------------------
 -- hud horse display settings
 ----------------------------------
-Config.HideHorseHealthNative  = true
-Config.HideHorseStaminaNative = true
-Config.HideHorseCourageNative = true
+Config.HideHorseHealthNative   = true
+Config.HideHorseStaminaNative  = true
+Config.HideHorseCourageNative  = true
 
 ----------------------------------
 -- voice icon settings
 ----------------------------------
-Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when talking
+Config.VoiceAlwaysVisible      = true -- true = always visible, false = only when talking
 
 ----------------------------------
 -- minimap / compass settings
 ----------------------------------
-Config.OnFootMinimap = false -- set to true/false to disable/enable minimap when on foot
-Config.OnFootCompass = false -- true = have the minimap set to a compass instead of off or normal minimap
-Config.MountMinimap = true  -- set to false if you want to disable the minimap when on mount
-Config.MountCompass  = false -- set to true if you want to have a compass instead of normal minimap while on a mount
+Config.OnFootMinimap           = false -- set to true/false to disable/enable minimap when on foot
+Config.OnFootCompass           = false -- true = have the minimap set to a compass instead of off or normal minimap
+Config.MountMinimap            = true  -- set to false if you want to disable the minimap when on mount
+Config.MountCompass            = false -- set to true if you want to have a compass instead of normal minimap while on a mount
 
 ----------------------------------
 -- turn health damage on/off
 ----------------------------------
-Config.DoHealthDamage = true
+Config.DoHealthDamage          = true
 
 ----------------------------------
 -- turn screen effect on/off
 ----------------------------------
-Config.DoHealthDamageFx = false
+Config.DoHealthDamageFx        = false
 
 ----------------------------------
 -- turn health damage sound on/off
 ----------------------------------
-Config.DoHealthPainSound = true
+Config.DoHealthPainSound       = true
 
 ----------------------------------
 -- temp settings (only one setting)
 ----------------------------------
-Config.TempFormat = 'celsius'
+Config.TempFormat              = 'celsius'
 --Config.TempFormat = 'fahrenheit'
 
 ----------------------------------
 -- warmth add while wearing
 ----------------------------------
-Config.WearingHat      = 0
-Config.WearingShirt    = 0
-Config.WearingPants    = 0
-Config.WearingBoots    = 0
-Config.WearingCoat     = 15
-Config.WearingOpenCoat = 15
-Config.WearingGloves   = 0
-Config.WearingVest     = 0
-Config.WearingPoncho   = 0
-Config.WearingSkirt    = 0
-Config.WearingChaps    = 0
+Config.WearingHat              = 0
+Config.WearingShirt            = 0
+Config.WearingPants            = 0
+Config.WearingBoots            = 0
+Config.WearingCoat             = 15
+Config.WearingOpenCoat         = 15
+Config.WearingGloves           = 0
+Config.WearingVest             = 0
+Config.WearingPoncho           = 0
+Config.WearingSkirt            = 0
+Config.WearingChaps            = 0
 
 ----------------------------------
 -- warmth limit before impacts health
 ----------------------------------
-Config.MinTemp = -5
-Config.MaxTemp = 40
+Config.MinTemp                 = -5
+Config.MaxTemp                 = 40
 
 ----------------------------------
 -- cleanliness limit before impacts health
 ----------------------------------
-Config.FlyEffect = true -- toggle flies on/off
-Config.MinCleanliness = 30
+Config.FlyEffect               = true -- toggle flies on/off
+Config.MinCleanliness          = 30
 
 ----------------------------------
 -- amount of health to remove if min/max temp reached
 ----------------------------------
-Config.RemoveHealth = 5
+Config.RemoveHealth            = 5
 
 ----------------------------------
 -- stress settings
 ----------------------------------
-Config.Intensity = {
+Config.Intensity               = {
     ["shake"] = {
         [1] = {
             min = 50,
@@ -129,7 +129,7 @@ Config.Intensity = {
     }
 }
 
-Config.EffectInterval = {
+Config.EffectInterval          = {
     [1] = {
         min = 50,
         max = 60,
@@ -160,59 +160,76 @@ Config.EffectInterval = {
 ----------------------------------
 -- HUD icon colors configuration
 ----------------------------------
-Config.IconColors = {
+Config.IconColors              = {
     -- Player Status Icons
     ['voice'] = {
-        normal = '#FFFFFF',      -- White when not talking
-        active = '#FF0000'       -- Red when talking
+        normal = '#FFFFFF', -- White when not talking
+        active = '#FF0000'  -- Red when talking
     },
     ['health'] = {
-        normal = '#FFFFFF',      -- White when healthy
-        low = '#FF0000'          -- Red when low health (<=30%)
+        normal = '#FFFFFF', -- White when healthy
+        low = '#FF0000'     -- Red when low health (<=30%)
     },
     ['stamina'] = {
-        normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low stamina (<=30%)
+        normal = '#FFFFFF', -- White when full
+        low = '#FF0000'     -- Red when low stamina (<=30%)
     },
     ['hunger'] = {
-        normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low hunger (<=30%)
+        normal = '#FFFFFF', -- White when full
+        low = '#FF0000'     -- Red when low hunger (<=30%)
     },
     ['thirst'] = {
-        normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low thirst (<=30%)
+        normal = '#FFFFFF', -- White when full
+        low = '#FF0000'     -- Red when low thirst (<=30%)
     },
     ['cleanliness'] = {
-        normal = '#FFFFFF',      -- White when clean
-        low = '#FF0000'          -- Red when dirty (<=30%)
+        normal = '#FFFFFF', -- White when clean
+        low = '#FF0000'     -- Red when dirty (<=30%)
     },
     ['stress'] = {
-        normal = '#FFFFFF',      -- White (stress icon color)
+        normal = '#FFFFFF', -- White (stress icon color)
     },
     ['temp'] = {
-        cold = '#FDD021',        -- Yellow when cold (<=30)
-        normal = '#CFBCAE'       -- Light brown when normal
+        cold = '#FDD021',  -- Yellow when cold (<=30)
+        normal = '#CFBCAE' -- Light brown when normal
     },
     ['mail'] = {
-        normal = '#FFFFFF',      -- White when no mail
-        hasmail = '#FFD700'      -- Gold when has mail
+        normal = '#FFFFFF', -- White when no mail
+        hasmail = '#FFD700' -- Gold when has mail
     },
     ['outlaw'] = {
-        normal = '#00FF00',      -- Green when not outlaw
-        active = '#FF0000'       -- Red when outlaw
+        normal = '#00FF00', -- Green when not outlaw
+        active = '#FF0000'  -- Red when outlaw
     },
-    
+
     -- Horse Status Icons
     ['horse_health'] = {
-        normal = '#a16600',      -- Brown/orange for horse health
-        low = '#FF0000'          -- Red when low
+        normal = '#a16600', -- Brown/orange for horse health
+        low = '#FF0000'     -- Red when low
     },
     ['horse_stamina'] = {
-        normal = '#a16600',      -- Brown/orange for horse stamina
-        low = '#FF0000'          -- Red when low
+        normal = '#a16600', -- Brown/orange for horse stamina
+        low = '#FF0000'     -- Red when low
     },
     ['horse_clean'] = {
-        normal = '#a16600',      -- Brown/orange for horse cleanliness
-        low = '#FF0000'          -- Red when dirty
+        normal = '#a16600', -- Brown/orange for horse cleanliness
+        low = '#FF0000'     -- Red when dirty
     }
+}
+
+----------------------------------
+-- server logo settings
+----------------------------------
+-- Display your server logo on the HUD
+-- Positions available:
+--   'top-left'      'top-middle'      'top-right'
+--   'bottom-left'   'bottom-middle'   'bottom-right'
+-- Place your logo file in: /html/assets/
+----------------------------------
+Config.Logo                    = {
+    showLogo = true,           -- true = show logo, false = hide logo
+    logoPosition = 'top-left', -- Logo position (see options above)
+    logoName = 'logoEx.png',   -- Name of logo file in /html/assets/
+    logoSize = 200,            -- Logo width in pixels (height scales automatically, min: 50, max: 500)
+    logoOpacity = 1.0          -- Logo transparency (0.0 = invisible, 1.0 = fully visible)
 }

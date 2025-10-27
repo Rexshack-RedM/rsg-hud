@@ -11,6 +11,14 @@
 
 <body>
     <div id="main-container">
+        <!-- Server Logo -->
+        <div id="logo-app">
+            <div id="server-logo" v-show="logoConfig.showLogo" :class="'logo-' + logoConfig.logoPosition">
+                <img :src="'assets/' + logoConfig.logoName" alt="Server Logo" 
+                     :style="{maxWidth: logoConfig.logoSize + 'px', opacity: logoConfig.logoOpacity}">
+            </div>
+        </div>
+        
         <div id="money-container" class="draggable-element" data-element="money">
             <div class="drag-handle" v-show="editMode">{{ locales.money_hud_label }}</div>
             <div id="money-cash">

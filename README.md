@@ -1,6 +1,7 @@
 <img width="2948" height="497" alt="rsg_framework" src="https://github.com/user-attachments/assets/638791d8-296d-4817-a596-785325c1b83a" />
 
 # 🧭 rsg-hud
+
 **Player HUD for RSG Framework.**
 
 ![Platform](https://img.shields.io/badge/platform-RedM-darkred)
@@ -9,6 +10,7 @@
 ---
 
 ## 🛠️ Dependencies
+
 - **rsg-core**
 - **ox_lib**
 - **rsg-telegram**
@@ -18,18 +20,21 @@
 ---
 
 ## ✨ Features
+
 - **Status bars:** health, stamina, Dead Eye.
 - **Needs:** hunger, thirst, cleanliness (with red icons when low).
 - **Temperature display.**
 - **Money display:** cash, bloodmoney, bank (driven by client logic).
 - **Stress system:** chance on actions, threshold effects, and decay (see config keys).
 - **Telegram visual notification**.
+- **Server logo display:** Customizable logo with 6 position options (see `LOGO_SETUP.md`).
 - **Localization** via `locales/*.json`.
 - **Pure NUI** HUD (`html/index.html`, `app.js`, `styles.css`).
 
 ---
 
 ## ⚙️ Configuration (`config.lua`)
+
 ```lua
 Config = {}
 
@@ -89,12 +94,23 @@ Config.IconColors = {
   deadeye= { normal = '#a16600', low = '#FF0000' },
   temperature = { normal = '#a16600', low = '#FF0000' },
 }
+
+-- Server Logo
+Config.Logo = {
+  showLogo = true,
+  logoPosition = 'top-left', -- 'top-left', 'top-middle', 'top-right', 'bottom-left', 'bottom-middle', 'bottom-right'
+  logoName = 'logoEx.png',   -- Place your logo in /html/assets/
+  logoSize = 200,            -- Width in pixels (50-500)
+  logoOpacity = 1.0          -- Transparency (0.0-1.0)
+}
 ```
+
 > 🔎 The file contains additional keys; see `config.lua` for the full list.
 
 ---
 
 ## 📂 Files
+
 - `client/client.lua` — HUD logic (reads `Config.*`, toggles native HUD parts, updates bars, stress & temperature).
 - `config.lua`
 - `html/` — `index.html`, `app.js`, `styles.css`.
@@ -104,6 +120,7 @@ Config.IconColors = {
 ---
 
 ## 📦 Installation
+
 1. Put `rsg-hud` in `resources/[rsg]`.
 2. In `server.cfg`:
    ```cfg
@@ -117,14 +134,15 @@ Config.IconColors = {
 ---
 
 ## 💎 Credits
+
 - **qbcore-redm-framework/qbr-hud** — base inspiration  
   🔗 https://github.com/qbcore-redm-framework/qbr-hud
 - **QRCore-RedM-Re/qr-hud** — base inspiration  
   🔗 https://github.com/QRCore-RedM-Re/qr-hud
 - **RexshackGaming / RSG Framework** — author & maintenance  
   🔗 https://github.com/Rexshack-RedM
-- **philmcracken892's** — edit hud option 
+- **philmcracken892's** — edit hud option
   🔗 https://github.com/philmcracken892
 
-- **Community contributors & translators**  
+- **Community contributors & translators**
 - License: **GPL‑3.0**
