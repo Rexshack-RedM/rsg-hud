@@ -1,0 +1,22 @@
+{
+    "sv_lang_1" : "Stresujesz się",
+    "sv_lang_2" : "Jesteś trochę spragniony",
+    "sv_lang_3" : "Odczuwasz ulgę w stresie",
+    "edit_mode_on_title": "Tryb edycji HUD",
+    "edit_mode_on_desc": "WŁ. - Kliknij i przeciągnij elementy HUD, aby je przesunąć",
+    "edit_mode_off_desc": "WYŁ.",
+    "reset_hud_title": "Reset HUD",
+    "reset_hud_desc": "Pozycje HUD przywrócone do domyślnych",
+    "money_hud_label": "💰 HUD Pieniędzy",
+    "temp_label": "🌡️ Temperatura",
+    "health_label": "❤️ Zdrowie",
+    "stamina_label": "⚡ Wytrzymałość",
+    "hunger_label": "🍎 Głód",
+    "thirst_label": "💧 Pragnienie",
+    "clean_label": "🛁 Czystość",
+    "stress_label": "🧠 Stres",
+    "mail_label": "✉️ Poczta",
+    "horse_health_label": "🐎❤️ Zdrowie Konia",
+    "horse_stamina_label": "🐎⚡ Wytrzymałość Konia",
+    "horse_clean_label": "🐎🛁 Czystość Konia"
+}
