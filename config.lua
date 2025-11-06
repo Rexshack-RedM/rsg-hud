@@ -4,8 +4,8 @@ Config = {}
 -- needs settings
 ----------------------------------
 Config.StatusInterval = 5000 -- how often to update hunger/thirst status in milliseconds
-Config.HungerRate = 0.10 -- Rate at which hunger goes down.
-Config.ThirstRate = 0.15 -- Rate at which thirst goes down.
+Config.HungerRate = 0.1 -- Rate at which hunger goes down.
+Config.ThirstRate = 0.1 -- Rate at which thirst goes down.
 Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
 
 ----------------------------------
@@ -33,12 +33,12 @@ Config.HideHorseCourageNative = true
 ----------------------------------
 -- voice icon settings
 ----------------------------------
-Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when talking
+Config.VoiceAlwaysVisible = false  -- true = always visible, false = only when talking
 
 ----------------------------------
 -- minimap / compass settings
 ----------------------------------
-Config.OnFootMinimap = false -- set to true/false to disable/enable minimap when on foot
+Config.OnFootMinimap = true -- set to true/false to disable/enable minimap when on foot
 Config.OnFootCompass = false -- true = have the minimap set to a compass instead of off or normal minimap
 Config.MountMinimap = true  -- set to false if you want to disable the minimap when on mount
 Config.MountCompass  = false -- set to true if you want to have a compass instead of normal minimap while on a mount
@@ -51,7 +51,7 @@ Config.DoHealthDamage = true
 ----------------------------------
 -- turn screen effect on/off
 ----------------------------------
-Config.DoHealthDamageFx = false
+Config.DoHealthDamageFx = true
 
 ----------------------------------
 -- turn health damage sound on/off
@@ -61,7 +61,7 @@ Config.DoHealthPainSound = true
 ----------------------------------
 -- temp settings (only one setting)
 ----------------------------------
-Config.TempFormat = 'celsius'
+Config.TempFormat = 'fahrenheit'
 --Config.TempFormat = 'fahrenheit'
 
 ----------------------------------
@@ -82,14 +82,14 @@ Config.WearingChaps    = 0
 ----------------------------------
 -- warmth limit before impacts health
 ----------------------------------
-Config.MinTemp = -5
-Config.MaxTemp = 40
+Config.MinTemp = 23
+Config.MaxTemp = 104
 
 ----------------------------------
 -- cleanliness limit before impacts health
 ----------------------------------
 Config.FlyEffect = true -- toggle flies on/off
-Config.MinCleanliness = 30
+Config.MinCleanliness = 10
 
 ----------------------------------
 -- amount of health to remove if min/max temp reached
