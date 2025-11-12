@@ -460,9 +460,7 @@ CreateThread(function()
                 -- hunger/thirst damage
                 if (state.hunger <= 0 or state.thirst <= 0) then
                     local decreaseThreshold = math.random(5, 10)
-                    if Config.DoHealthPainSound then
-                        PlayPain(cache.ped, 9, 1, true, true)
-                    end
+                    PlayPain(cache.ped, 9, 1, true, true)
                     SetEntityHealth(cache.ped, math.max(0, health - decreaseThreshold))
                 end
 
