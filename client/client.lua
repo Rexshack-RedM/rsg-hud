@@ -412,6 +412,19 @@ CreateThread(function()
 
         local tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
 
+        -- check if job type is exempt from clothing warmth
+        if Config.EnableNoWarmthJobs and Config.NoWarmthJobs then
+            local playerData = RSGCore.Functions.GetPlayerData()
+            if playerData.job and playerData.job.type then
+                for _, jobType in pairs(Config.NoWarmthJobs) do
+                    if playerData.job.type == jobType then
+                        tempadd = 0
+                        break
+                    end
+                end
+            end
+        end
+
         if Config.TempFormat == 'celsius' then
             temperature = math.floor(GetTemperatureAtCoords(coords)) + tempadd .. "°C" --Uncomment for celcius
             temp = math.floor(GetTemperatureAtCoords(coords)) + tempadd
@@ -447,7 +460,9 @@ CreateThread(function()
                 -- hunger/thirst damage
                 if (state.hunger <= 0 or state.thirst <= 0) then
                     local decreaseThreshold = math.random(5, 10)
-                    PlayPain(cache.ped, 9, 1, true, true)
+                    if Config.DoHealthPainSound then
+                        PlayPain(cache.ped, 9, 1, true, true)
+                    end
                     SetEntityHealth(cache.ped, math.max(0, health - decreaseThreshold))
                 end
 
