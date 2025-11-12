@@ -80,6 +80,17 @@ Config.WearingSkirt    = 0
 Config.WearingChaps    = 0
 
 ----------------------------------
+-- job type warmth exemptions
+----------------------------------
+Config.EnableNoWarmthJobs = true  -- set to true/false to enable/disable the feature
+
+Config.NoWarmthJobs = {
+    'leo',      -- Law enforcement (sheriff, deputy, marshal, etc.)
+    'medic',    -- Medical jobs (doctor, surgeon, etc.)
+    -- add more job types here
+}
+
+----------------------------------
 -- warmth limit before impacts health
 ----------------------------------
 Config.MinTemp = -5
