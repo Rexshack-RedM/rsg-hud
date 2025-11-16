@@ -5,12 +5,12 @@ local speed = 0.0
 local cashAmount = 0
 local bloodmoneyAmount = 0
 local bankAmount = 0
-local showUI = true
+local showUI = false
 local temperature = 0
 local temp = 0
 local tempadd = 0
 local isWeapon = false
--- local outlawstatus = 0
+local outlawstatus = 0
 
 ------------------------------------------------
 -- send locales to NUI
@@ -156,17 +156,16 @@ local FliesSpawn = function (clean)
     local current_ptfx_dictionary = new_ptfx_dictionary
     local current_ptfx_name = new_ptfx_name
     local bone_index = IsPedMale() and 413 or 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
-    local ptfx_offcet_x = 0.2
-    local ptfx_offcet_y = 0.0
-    local ptfx_offcet_z = -0.4
-    local ptfx_rot_x = 0.0
-    local ptfx_rot_y = 0.0
-    local ptfx_rot_z = 0.0
-    local ptfx_scale = 1.0
-    local ptfx_axis_x = 0
-    local ptfx_axis_y = 0
-    local ptfx_axis_z = 0
-    local clean = clean
+     local ptfx_offcet_x = 0.2
+     local ptfx_offcet_y = 0.0
+     local ptfx_offcet_z = -0.4
+     local ptfx_rot_x = 0.0
+     local ptfx_rot_y = 0.0
+     local ptfx_rot_z = 0.0
+     local ptfx_scale = 1.0
+     local ptfx_axis_x = 0
+     local ptfx_axis_y = 0
+     local ptfx_axis_z = 0
 
     if LocalPlayer.state.isBathingActive then
         if is_particle_effect_active then
@@ -184,14 +183,14 @@ local FliesSpawn = function (clean)
     if not is_particle_effect_active and clean < Config.MinCleanliness then
         current_ptfx_dictionary = new_ptfx_dictionary
         current_ptfx_name = new_ptfx_name
-        if not Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then -- HasNamedPtfxAssetLoaded
-            Citizen.InvokeNative(0xF2B2353BBC0D4E8F, joaat(current_ptfx_dictionary))  -- RequestNamedPtfxAsset
-            local counter = 0
-            while not Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) and counter <= 300 do  -- while not HasNamedPtfxAssetLoaded
-                Citizen.Wait(0)
-            end
-        end
-        if not filesspawned and Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then  -- HasNamedPtfxAssetLoaded
+         if not Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then -- HasNamedPtfxAssetLoaded
+             Citizen.InvokeNative(0xF2B2353BBC0D4E8F, joaat(current_ptfx_dictionary))  -- RequestNamedPtfxAsset
+             local counter = 0
+             while not Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) and counter <= 300 do  -- while not HasNamedPtfxAssetLoaded
+                 Citizen.Wait(0)
+             end
+         end
+         if Citizen.InvokeNative(0x65BB72F29138F5D6, joaat(current_ptfx_dictionary)) then  -- HasNamedPtfxAssetLoaded
             Citizen.InvokeNative(0xA10DB07FC234DD12, current_ptfx_dictionary) -- UseParticleFxAsset
 
             current_ptfx_handle_id = Citizen.InvokeNative(0x9C56621462FFE7A6,current_ptfx_name,PlayerPedId(),ptfx_offcet_x,ptfx_offcet_y,ptfx_offcet_z,ptfx_rot_x,ptfx_rot_y,ptfx_rot_z,bone_index,ptfx_scale,ptfx_axis_x,ptfx_axis_y,ptfx_axis_z) -- StartNetworkedParticleFxLoopedOnEntityBone
@@ -321,7 +320,7 @@ CreateThread(function()
                 horseclean = horseclean,
                 voice = voice,
                 voiceAlwaysVisible = Config.VoiceAlwaysVisible,
-                youhavemail = LocalPlayer.state.telegramUnreadMessages or 0 > 0,
+                 youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,
                 outlawstatus = outlawstatus,
                 iconColors = Config.IconColors, -- Send config colors
             })
@@ -397,20 +396,20 @@ CreateThread(function()
         local skirts   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xA0E3AB7F) -- skirts
         local chaps    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x3107499B) -- chaps
 
-        -- get temp add
-        if hat      == 1 then what      = Config.WearingHat      else what      = 0 end
-        if shirt    == 1 then wshirt    = Config.WearingShirt    else wshirt    = 0 end
-        if pants    == 1 then wpants    = Config.WearingPants    else wpants    = 0 end
-        if boots    == 1 then wboots    = Config.WearingBoots    else wboots    = 0 end
-        if coat     == 1 then wcoat     = Config.WearingCoat     else wcoat     = 0 end
-        if opencoat == 1 then wopencoat = Config.WearingOpenCoat else wopencoat = 0 end
-        if gloves   == 1 then wgloves   = Config.WearingGloves   else wgloves   = 0 end
-        if vest     == 1 then wvest     = Config.WearingVest     else wvest     = 0 end
-        if poncho   == 1 then wponcho   = Config.WearingPoncho   else wponcho   = 0 end
-        if skirts   == 1 then wskirts   = Config.WearingSkirt    else wskirts   = 0 end
-        if chaps    == 1 then wchaps    = Config.WearingChaps    else wchaps    = 0 end
+         -- get temp add
+         local what      = hat      == 1 and Config.WearingHat      or 0
+         local wshirt    = shirt    == 1 and Config.WearingShirt    or 0
+         local wpants    = pants    == 1 and Config.WearingPants    or 0
+         local wboots    = boots    == 1 and Config.WearingBoots    or 0
+         local wcoat     = coat     == 1 and Config.WearingCoat     or 0
+         local wopencoat = opencoat == 1 and Config.WearingOpenCoat or 0
+         local wgloves   = gloves   == 1 and Config.WearingGloves   or 0
+         local wvest     = vest     == 1 and Config.WearingVest     or 0
+         local wponcho   = poncho   == 1 and Config.WearingPoncho   or 0
+         local wskirts   = skirts   == 1 and Config.WearingSkirt    or 0
+         local wchaps    = chaps    == 1 and Config.WearingChaps    or 0
 
-        local tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
+         tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
 
         -- check if job type is exempt from clothing warmth
         if Config.EnableNoWarmthJobs and Config.NoWarmthJobs then
@@ -600,17 +599,17 @@ lib.onCache('weapon', function(weapon)
     else
         isWeapon = false
     end
-    CreateThread(function()
-        while isWeapon do
-            local isShooting = IsPedShooting(player)
-            if isShooting then
-                if math.random() < Config.StressChance then
-                    updateStress(math.random(1, 3), true)
-                end
-            end
-            Wait(0)
-        end
-    end)
+     CreateThread(function()
+         while isWeapon do
+             local isShooting = IsPedShooting(player)
+             if isShooting then
+                 if math.random() < Config.StressChance then
+                     updateStress(math.random(1, 3), true)
+                 end
+             end
+             Wait(100)
+         end
+     end)
 end)
 
 ------------------------------------------------
@@ -655,6 +654,28 @@ end)
 RegisterNetEvent('hud:client:RelieveStress', function(amount)
     updateStress(amount, false)
 end)
+
+------------------------------------------------
+-- auto enable HUD on login
+------------------------------------------------
+local function setupLoginWatcher()
+    local wasLoggedIn = false
+    CreateThread(function()
+        while true do
+            Wait(100)
+            local isLoggedIn = LocalPlayer.state.isLoggedIn
+            if isLoggedIn and not wasLoggedIn then
+                showUI = true
+                wasLoggedIn = true
+            elseif not isLoggedIn and wasLoggedIn then
+                showUI = false
+                wasLoggedIn = false
+            end
+        end
+    end)
+end
+
+setupLoginWatcher()
 
 ------------------------------------------------
 -- hud edit mode toggle
