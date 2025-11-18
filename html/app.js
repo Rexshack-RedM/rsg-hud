@@ -625,8 +625,13 @@ class HUDDragSystem {
             const clampedX = Math.max(0, Math.min(newX, viewportWidth - elementRect.width));
             const clampedY = Math.max(0, Math.min(newY, viewportHeight - elementRect.height));
             
-            this.currentElement.style.left = clampedX + 'px';
-            this.currentElement.style.top = clampedY + 'px';
+            const gridSize = 10;
+            const snappedX = Math.round(clampedX / gridSize) * gridSize;
+            const snappedY = Math.round(clampedY / gridSize) * gridSize;
+            const finalX = Math.max(0, Math.min(snappedX, viewportWidth - elementRect.width));
+            const finalY = Math.max(0, Math.min(snappedY, viewportHeight - elementRect.height));
+            this.currentElement.style.left = finalX + 'px';
+            this.currentElement.style.top = finalY + 'px';
         }
         else if (this.isResizing && this.currentElement) {
             e.preventDefault();
