@@ -437,6 +437,13 @@ CreateThread(function()
 end)
 
 ------------------------------------------------
+-- export : get current temperature
+------------------------------------------------
+exports('GetCurrentTemperature', function()
+    return temp
+end)
+
+------------------------------------------------
 -- health/cleanliness damage
 ------------------------------------------------
 CreateThread(function()
