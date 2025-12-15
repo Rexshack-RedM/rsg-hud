@@ -1,6 +1,4 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
-
 local speed = 0.0
 local cashAmount = 0
 local bloodmoneyAmount = 0
@@ -11,6 +9,7 @@ local temp = 0
 local tempadd = 0
 local isWeapon = false
 local outlawstatus = 0
+lib.locale()
 
 ------------------------------------------------
 -- send locales to NUI
@@ -156,16 +155,16 @@ local FliesSpawn = function (clean)
     local current_ptfx_dictionary = new_ptfx_dictionary
     local current_ptfx_name = new_ptfx_name
     local bone_index = IsPedMale() and 413 or 464   -- ["CP_Chest"]  = {bone_index = 464, bone_id = 53684},
-     local ptfx_offcet_x = 0.2
-     local ptfx_offcet_y = 0.0
-     local ptfx_offcet_z = -0.4
-     local ptfx_rot_x = 0.0
-     local ptfx_rot_y = 0.0
-     local ptfx_rot_z = 0.0
-     local ptfx_scale = 1.0
-     local ptfx_axis_x = 0
-     local ptfx_axis_y = 0
-     local ptfx_axis_z = 0
+    local ptfx_offcet_x = 0.2
+    local ptfx_offcet_y = 0.0
+    local ptfx_offcet_z = -0.4
+    local ptfx_rot_x = 0.0
+    local ptfx_rot_y = 0.0
+    local ptfx_rot_z = 0.0
+    local ptfx_scale = 1.0
+    local ptfx_axis_x = 0
+    local ptfx_axis_y = 0
+    local ptfx_axis_z = 0
 
     if LocalPlayer.state.isBathingActive then
         if is_particle_effect_active then
@@ -320,7 +319,7 @@ CreateThread(function()
                 horseclean = horseclean,
                 voice = voice,
                 voiceAlwaysVisible = Config.VoiceAlwaysVisible,
-                 youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,
+                youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,
                 outlawstatus = outlawstatus,
                 iconColors = Config.IconColors, -- Send config colors
             })
@@ -380,59 +379,67 @@ end)
 CreateThread(function()
     while true do
         Wait(1000)
+        if Config.TempFeature then
+            local coords = GetEntityCoords(cache.ped)
+            -- wearing
+            local hat      = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x9925C067) -- hat
+            local shirt    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x2026C46D) -- shirt
+            local pants    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x1D4C528A) -- pants
+            local boots    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x777EC6EF) -- boots
+            local coat     = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xE06D30CE) -- coat
+            local opencoat = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x662AC34) -- open-coat
+            local gloves   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xEABE0032) -- gloves
+            local vest     = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x485EE834) -- vest
+            local poncho   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xAF14310B) -- poncho
+            local skirts   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xA0E3AB7F) -- skirts
+            local chaps    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x3107499B) -- chaps
 
-        local coords = GetEntityCoords(cache.ped)
+             -- get temp add
+             local what      = hat      == 1 and Config.WearingHat      or 0
+             local wshirt    = shirt    == 1 and Config.WearingShirt    or 0
+             local wpants    = pants    == 1 and Config.WearingPants    or 0
+             local wboots    = boots    == 1 and Config.WearingBoots    or 0
+             local wcoat     = coat     == 1 and Config.WearingCoat     or 0
+             local wopencoat = opencoat == 1 and Config.WearingOpenCoat or 0
+             local wgloves   = gloves   == 1 and Config.WearingGloves   or 0
+             local wvest     = vest     == 1 and Config.WearingVest     or 0
+             local wponcho   = poncho   == 1 and Config.WearingPoncho   or 0
+             local wskirts   = skirts   == 1 and Config.WearingSkirt    or 0
+             local wchaps    = chaps    == 1 and Config.WearingChaps    or 0
 
-        -- wearing
-        local hat      = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x9925C067) -- hat
-        local shirt    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x2026C46D) -- shirt
-        local pants    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x1D4C528A) -- pants
-        local boots    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x777EC6EF) -- boots
-        local coat     = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xE06D30CE) -- coat
-        local opencoat = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x662AC34) -- open-coat
-        local gloves   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xEABE0032) -- gloves
-        local vest     = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x485EE834) -- vest
-        local poncho   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xAF14310B) -- poncho
-        local skirts   = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0xA0E3AB7F) -- skirts
-        local chaps    = Citizen.InvokeNative(0xFB4891BD7578CDC1, cache.ped, 0x3107499B) -- chaps
+             tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
 
-         -- get temp add
-         local what      = hat      == 1 and Config.WearingHat      or 0
-         local wshirt    = shirt    == 1 and Config.WearingShirt    or 0
-         local wpants    = pants    == 1 and Config.WearingPants    or 0
-         local wboots    = boots    == 1 and Config.WearingBoots    or 0
-         local wcoat     = coat     == 1 and Config.WearingCoat     or 0
-         local wopencoat = opencoat == 1 and Config.WearingOpenCoat or 0
-         local wgloves   = gloves   == 1 and Config.WearingGloves   or 0
-         local wvest     = vest     == 1 and Config.WearingVest     or 0
-         local wponcho   = poncho   == 1 and Config.WearingPoncho   or 0
-         local wskirts   = skirts   == 1 and Config.WearingSkirt    or 0
-         local wchaps    = chaps    == 1 and Config.WearingChaps    or 0
-
-         tempadd = (what + wshirt + wpants + wboots + wcoat + wopencoat + wgloves + wvest + wponcho + wskirts + wchaps)
-
-        -- check if job type is exempt from clothing warmth
-        if Config.EnableNoWarmthJobs and Config.NoWarmthJobs then
-            local playerData = RSGCore.Functions.GetPlayerData()
-            if playerData.job and playerData.job.type then
-                for _, jobType in pairs(Config.NoWarmthJobs) do
-                    if playerData.job.type == jobType then
-                        tempadd = 0
-                        break
+            -- check if job type is exempt from clothing warmth
+            if Config.EnableNoWarmthJobs and Config.NoWarmthJobs then
+                local playerData = RSGCore.Functions.GetPlayerData()
+                if playerData.job and playerData.job.type then
+                    for _, jobType in pairs(Config.NoWarmthJobs) do
+                        if playerData.job.type == jobType then
+                            tempadd = 0
+                            break
+                        end
                     end
                 end
             end
-        end
 
-        if Config.TempFormat == 'celsius' then
-            temperature = math.floor(GetTemperatureAtCoords(coords)) + tempadd .. "°C" --Uncomment for celcius
-            temp = math.floor(GetTemperatureAtCoords(coords)) + tempadd
+            if Config.TempFormat == 'celsius' then
+                temperature = math.floor(GetTemperatureAtCoords(coords)) + tempadd .. "°C"
+                temp = math.floor(GetTemperatureAtCoords(coords)) + tempadd
+            end
+            if Config.TempFormat == 'fahrenheit' then
+                temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd .. "°F"
+                temp = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd
+            end
+        else
+            if Config.TempFormat == 'celsius' then
+                temperature = math.floor(GetTemperatureAtCoords(coords)) .. "°C"
+                temp = math.floor(GetTemperatureAtCoords(coords))
+            end
+            if Config.TempFormat == 'fahrenheit' then
+                temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) .. "°F"
+                temp = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32)
+            end
         end
-        if Config.TempFormat == 'fahrenheit' then
-            temperature = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd .. "°F" --Comment out for celcius
-            temp = math.floor(GetTemperatureAtCoords(coords) * 9/5 + 32) + tempadd
-        end
-
     end
 end)
 
@@ -470,30 +477,32 @@ CreateThread(function()
                     SetEntityHealth(cache.ped, math.max(0, health - decreaseThreshold))
                 end
 
-                -- cold health damage
-                if temp < Config.MinTemp then 
-                    if Config.DoHealthDamageFx then
-                        Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                if Config.TempFeature then
+                    -- cold health damage
+                    if temp < Config.MinTemp then 
+                        if Config.DoHealthDamageFx then
+                            Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                        end
+                        if Config.DoHealthPainSound then
+                            PlayPain(cache.ped, 9, 1, true, true)
+                        end
+                        SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
+                    elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
+                        Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                     end
-                    if Config.DoHealthPainSound then
-                        PlayPain(cache.ped, 9, 1, true, true)
-                    end
-                    SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
-                elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
-                    Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
-                end
 
-                -- hot health damage
-                if temp > Config.MaxTemp then
-                    if Config.DoHealthDamageFx then
-                        Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                    -- hot health damage
+                    if temp > Config.MaxTemp then
+                        if Config.DoHealthDamageFx then
+                            Citizen.InvokeNative(0x4102732DF6B4005F, "MP_Downed", 0, true)
+                        end
+                        if Config.DoHealthPainSound then
+                            PlayPain(cache.ped, 9, 1, true, true)
+                        end
+                        SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
+                    elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
+                        Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                     end
-                    if Config.DoHealthPainSound then
-                        PlayPain(cache.ped, 9, 1, true, true)
-                    end
-                    SetEntityHealth(cache.ped, math.max(0, health -  Config.RemoveHealth))
-                elseif Citizen.InvokeNative(0x4A123E85D7C4CA0B, "MP_Downed") and Config.DoHealthDamageFx then
-                    Citizen.InvokeNative(0xB4FD7446BAB2F394, "MP_Downed")
                 end
 
                 -- cleanliness health damage

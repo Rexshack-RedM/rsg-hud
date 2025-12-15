@@ -4,8 +4,8 @@ Config = {}
 -- needs settings
 ----------------------------------
 Config.StatusInterval = 5000 -- how often to update hunger/thirst status in milliseconds
-Config.HungerRate = 0.10 -- Rate at which hunger goes down.
-Config.ThirstRate = 0.15 -- Rate at which thirst goes down.
+Config.HungerRate = 0.01 -- Rate at which hunger goes down.
+Config.ThirstRate = 0.01 -- Rate at which thirst goes down.
 Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
 
 ----------------------------------
@@ -65,7 +65,12 @@ Config.TempFormat = 'celsius'
 --Config.TempFormat = 'fahrenheit'
 
 ----------------------------------
--- warmth add while wearing
+-- temp feature (does damage to player if too hot or cold)
+----------------------------------
+Config.TempFeature = false
+
+----------------------------------
+-- warmth add while wearing (temp feature must be enabled)
 ----------------------------------
 Config.WearingHat      = 0
 Config.WearingShirt    = 0
@@ -80,7 +85,7 @@ Config.WearingSkirt    = 0
 Config.WearingChaps    = 0
 
 ----------------------------------
--- job type warmth exemptions
+-- job type warmth exemptions (temp feature must be enabled)
 ----------------------------------
 Config.EnableNoWarmthJobs = true  -- set to true/false to enable/disable the feature
 
@@ -91,7 +96,7 @@ Config.NoWarmthJobs = {
 }
 
 ----------------------------------
--- warmth limit before impacts health
+-- warmth limit before impacts health  (temp feature must be enabled)
 ----------------------------------
 Config.MinTemp = -5
 Config.MaxTemp = 40
