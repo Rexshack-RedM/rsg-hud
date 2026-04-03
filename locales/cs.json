@@ -1,0 +1,22 @@
+{
+    "sv_lang_1" : "Začínáte být ve stresu",
+    "sv_lang_2" : "Máte trochu žízeň",
+    "sv_lang_3" : "Cítíte úlevu od stresu",
+    "edit_mode_on_title": "Režim úprav HUD",
+    "edit_mode_on_desc": "ZAPNUTO - Klikněte a přetáhněte prvky HUD pro jejich přemístění",
+    "edit_mode_off_desc": "VYPNUTO",
+    "reset_hud_title": "Reset HUD",
+    "reset_hud_desc": "Pozice prvků HUD byly obnoveny na výchozí",
+    "money_hud_label": "💰 Peníze HUD",
+    "temp_label": "🌡️ Teplota",
+    "health_label": "❤️ Zdraví",
+    "stamina_label": "⚡ Výdrž",
+    "hunger_label": "🍎 Hlad",
+    "thirst_label": "💧 Žízeň",
+    "clean_label": "🛁 Čistota",
+    "stress_label": "🧠 Stres",
+    "mail_label": "✉️ Pošta",
+    "horse_health_label": "🐎❤️ Zdraví koně",
+    "horse_stamina_label": "🐎⚡ Výdrž koně",
+    "horse_clean_label": "🐎🛁 Čistota koně"
+}
