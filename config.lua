@@ -204,6 +204,7 @@ Config.IconColors = {
     },
     ['stress'] = {
         normal = '#FFFFFF',      -- White (stress icon color)
+        low = '#FF0000'          -- Red when stressed (>=70%)
     },
     ['temp'] = {
         cold = '#FDD021',        -- Yellow when cold (<=30)

@@ -31,9 +31,9 @@ RSGCore.Functions.CreateCallback('hud:server:getoutlawstatus', function(source, 
     if Player ~= nil then
         MySQL.query('SELECT outlawstatus FROM players WHERE citizenid = ?', {Player.PlayerData.citizenid}, function(result)
             if result[1] then
-                cb(result)
+                cb(result[1].outlawstatus)
             else
-                cb(nil)
+                cb(0)
             end
         end)
     end

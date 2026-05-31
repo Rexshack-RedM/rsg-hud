@@ -250,7 +250,7 @@ CreateThread(function()
     while true do
         Wait(30000)
         RSGCore.Functions.TriggerCallback('hud:server:getoutlawstatus', function(result)
-            outlawstatus = result[1].outlawstatus
+            outlawstatus = result
         end)
     end
 end)
@@ -521,7 +521,6 @@ CreateThread(function()
 
             updateNeed('hunger', Config.HungerRate, true)
             updateNeed('thirst', Config.ThirstRate, true)
-            updateNeed('cleanliness', Config.CleanlinessRate, true)
             updateNeed('stress', Config.StressDecayRate, true)
         end
     end

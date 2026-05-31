@@ -147,7 +147,8 @@ const playerHud = {
             horsestamina: 0,
             horseclean: 0,
             youhavemail: false,
-            outlawstatus: true,
+            outlawstatus: 0,
+            showoutlawstatus: false,
             show: false,
             talking: false,
             showVoice: true,
@@ -167,6 +168,7 @@ const playerHud = {
             showYouHaveMail: true,
             talkingColor: "#FFFFFF",
             showTemp: true,
+            showStressColor: "#FFFFFF",
             editMode: false,
             iconColors: {}, // Store config colors
             savedVisibility: null, // Store visibility states for edit mode
@@ -319,16 +321,23 @@ const playerHud = {
                     this.showYouHaveMail = false;
                 }
             }
+
+            if (data.stress >= 70) {
+                this.showStressColor = this.iconColors.stress?.low || "#FF0000";
+            } else {
+                this.showStressColor = this.iconColors.stress?.normal || "#FFFFFF";
+            }
             
             // Voice visibility - configurable
-            if (data.voiceAlwaysVisible) {
-                this.showVoice = true;  // Always visible if config enabled
-            } else {
-                // Only visible when talking if config disabled
-                if (data.talking) {
+            if (!this.editMode) {
+                if (data.voiceAlwaysVisible) {
                     this.showVoice = true;
                 } else {
-                    this.showVoice = false;
+                    if (data.talking) {
+                        this.showVoice = true;
+                    } else {
+                        this.showVoice = false;
+                    }
                 }
             }
             if (data.talking) {
@@ -383,6 +392,7 @@ const playerHud = {
                     showThirst: this.showThirst,
                     showCleanliness: this.showCleanliness,
                     showStress: this.showStress,
+                    showVoice: this.showVoice,
                     showYouHaveMail: this.showYouHaveMail,
                     showHorseHealth: this.showHorseHealth,
                     showHorseStamina: this.showHorseStamina,
@@ -398,6 +408,7 @@ const playerHud = {
                 this.showThirst = true;
                 this.showCleanliness = true;
                 this.showStress = true;
+                this.showVoice = true;
                 this.showYouHaveMail = true;
                 this.showHorseHealth = true;
                 this.showHorseStamina = true;
@@ -413,6 +424,7 @@ const playerHud = {
                     this.showThirst = this.savedVisibility.showThirst;
                     this.showCleanliness = this.savedVisibility.showCleanliness;
                     this.showStress = this.savedVisibility.showStress;
+                    this.showVoice = this.savedVisibility.showVoice;
                     this.showYouHaveMail = this.savedVisibility.showYouHaveMail;
                     this.showHorseHealth = this.savedVisibility.showHorseHealth;
                     this.showHorseStamina = this.savedVisibility.showHorseStamina;
