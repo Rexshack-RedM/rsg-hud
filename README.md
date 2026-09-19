@@ -1,130 +1,98 @@
-<img width="2948" height="497" alt="rsg_framework" src="https://github.com/user-attachments/assets/638791d8-296d-4817-a596-785325c1b83a" />
+# rsg-hud
 
-# 🧭 rsg-hud
-**Player HUD for RSG Framework.**
+A HUD for RedM servers running [RSG-Core](https://github.com/Rexshack-RedM/rsg-core): player and horse status bars, money display, stress, temperature, outlaw status and a drag-and-drop layout editor.
 
-![Platform](https://img.shields.io/badge/platform-RedM-darkred)
-![License](https://img.shields.io/badge/license-GPL--3.0-green)
+## Features
 
----
+- **Status bars:** health, stamina, armor, hunger, thirst, cleanliness, stress, temperature, voice range, unread telegram mail and outlaw status. Bars hide automatically when full/empty and turn red at 30% or below.
+- **Horse bars:** health, stamina and cleanliness while mounted.
+- **Money HUD:** cash, bloodmoney and bank show briefly when they change. `/cash` and `/bloodmoney` show them on demand.
+- **Needs system:** hunger, thirst, cleanliness and stress decay over time. Optional health damage when hunger/thirst/cleanliness hit 0 or the temperature is out of range.
+- **Stress:** gained by shooting and by speeding in vehicles. Screen shake starts at `Config.MinimumStress`, and at 100 the player ragdolls and the screen fades.
+- **Temperature:** optional feature (`Config.TempFeature`) with clothing warmth values and job exemptions (Celsius or Fahrenheit).
+- **Flies effect** when cleanliness drops below `Config.MinCleanliness`.
+- **Minimap and compass:** separate settings for on foot and mounted.
+- **HUD editor:** drag and resize every element. Layout is saved per player in the NUI local storage.
+- **Native HUD hiding:** hides the default health, stamina, deadeye and horse cores.
+- **Localisation:** `en`, `el`, `es`, `fr`, `it`, `pl`, `pt-br` (`locales/`).
+- Only sends updates to the NUI when a value changes.
 
-## 🛠️ Dependencies
-- **rsg-core**
-- **ox_lib**
-- **rsg-telegram**
+## Dependencies
 
-`ui_page`: `html/index.html`
+- [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
+- [ox_lib](https://github.com/overextended/ox_lib)
+- [oxmysql](https://github.com/overextended/oxmysql) (outlaw status is read from `players.outlawstatus`)
+- Optional: `rsg-telegram` (drives the mail icon via the `telegramUnreadMessages` state bag)
 
----
+## Installation
 
-## ✨ Features
-- **Status bars:** health, stamina, Dead Eye.
-- **Needs:** hunger, thirst, cleanliness (with red icons when low).
-- **Temperature display.**
-- **Money display:** cash, bloodmoney, bank (driven by client logic).
-- **Stress system:** chance on actions, threshold effects, and decay (see config keys).
-- **Telegram visual notification**.
-- **Localization** via `locales/*.json`.
-- **Pure NUI** HUD (`html/index.html`, `app.js`, `styles.css`).
-
----
-
-## ⚙️ Configuration (`config.lua`)
-```lua
-Config = {}
-
--- Update/decay
-Config.StatusInterval   = 5000
-Config.HungerRate       = 0.10
-Config.ThirstRate       = 0.15
-Config.CleanlinessRate  = 0.01
-
--- Stress
-Config.StressChance     = 0.1
-Config.MinimumStress    = 50
-Config.MinimumSpeed     = 100
-Config.StressDecayRate  = 0.5
-
--- Native HUD toggles
-Config.HidePlayerHealthNative  = true
-Config.HidePlayerStaminaNative = true
-Config.HidePlayerDeadEyeNative = true
-Config.HideHorseHealthNative   = true
-Config.HideHorseStaminaNative  = true
-Config.HideHorseCourageNative  = true
-
--- Effects
-Config.EffectInterval   = 1000
-Config.Intensity        = 0.5
-Config.DoHealthDamage   = false
-Config.DoHealthDamageFx = false
-Config.DoHealthPainSound= false
-Config.FlyEffect        = false
-
--- Temperature
-Config.TempFormat       = 'c' -- c|f
-
--- Voice HUD (icon visibility)
-Config.VoiceAlwaysVisible = false
-
--- Clothing flags (read by HUD to adjust cleanliness/overlays)
-Config.WearingHat       = true
-Config.WearingCoat      = true
-Config.WearingOpenCoat  = false
-Config.WearingVest      = true
-Config.WearingShirt     = true
-Config.WearingGloves    = true
-Config.WearingPoncho    = false
-Config.WearingChaps     = false
-Config.WearingPants     = true
-Config.WearingSkirt     = false
-Config.WearingBoots     = true
-
--- Icon colors (normal/low) for each meter (excerpt)
-Config.IconColors = {
-  hunger = { normal = '#a16600', low = '#FF0000' },
-  thirst = { normal = '#a16600', low = '#FF0000' },
-  health = { normal = '#a16600', low = '#FF0000' },
-  stamina= { normal = '#a16600', low = '#FF0000' },
-  deadeye= { normal = '#a16600', low = '#FF0000' },
-  temperature = { normal = '#a16600', low = '#FF0000' },
-}
-```
-> 🔎 The file contains additional keys; see `config.lua` for the full list.
-
----
-
-## 📂 Files
-- `client/client.lua` — HUD logic (reads `Config.*`, toggles native HUD parts, updates bars, stress & temperature).
-- `config.lua`
-- `html/` — `index.html`, `app.js`, `styles.css`.
-- `locales/*.json` — language strings.
-- `fxmanifest.lua` — declares scripts and dependencies.
-
----
-
-## 📦 Installation
-1. Put `rsg-hud` in `resources/[rsg]`.
-2. In `server.cfg`:
-   ```cfg
+1. Put the `rsg-hud` folder in your `resources` directory.
+2. Make sure the dependencies above start first, then add to `server.cfg`:
+   ```
    ensure ox_lib
+   ensure oxmysql
    ensure rsg-core
-   ensure rsg-telegram
    ensure rsg-hud
    ```
-3. (Optional) Edit `config.lua` to tune decay, stress, native HUD toggles, icon colours, etc.
+3. Configure `config.lua` to taste and restart the server.
 
----
+## Commands
 
-## 💎 Credits
-- **qbcore-redm-framework/qbr-hud** — base inspiration  
-  🔗 https://github.com/qbcore-redm-framework/qbr-hud
-- **QRCore-RedM-Re/qr-hud** — base inspiration  
-  🔗 https://github.com/QRCore-RedM-Re/qr-hud
-- **RexshackGaming / RSG Framework** — author & maintenance  
-  🔗 https://github.com/Rexshack-RedM
-- **philmcracken892's** — edit hud option 
-  🔗 https://github.com/philmcracken892
+| Command | Description |
+| --- | --- |
+| `/edithud` | Toggle edit mode. Drag to move, use the corner handle to resize, press ESC to exit. |
+| `/resethud` | Reset all element positions and sizes to default. |
+| `/cash` | Show your cash balance. |
+| `/bloodmoney` | Show your bloodmoney balance. |
 
-- **Community contributors & translators**  
-- License: **GPL‑3.0**
+## Configuration (`config.lua`)
+
+| Option | Description |
+| --- | --- |
+| `StatusInterval` | How often (ms) needs decay and health damage are applied. |
+| `HungerRate`, `ThirstRate` | Amount hunger/thirst drop each interval. |
+| `StressChance`, `MinimumStress`, `MinimumSpeed`, `StressDecayRate` | Stress gain chance when shooting, shake threshold, speeding threshold (mph) and decay per interval. |
+| `Intensity`, `EffectInterval` | Shake strength and delay between effects per stress range. |
+| `Hide*Native` | Hide the default player/horse health, stamina, deadeye and courage cores. |
+| `VoiceAlwaysVisible` | `true` always shows the voice icon, `false` only while talking. |
+| `OnFootMinimap`, `OnFootCompass`, `MountMinimap`, `MountCompass` | Minimap/compass behaviour on foot and mounted. |
+| `DoHealthDamage`, `DoHealthDamageFx`, `DoHealthPainSound` | Damage from starvation, dehydration, dirt and temperature, plus its screen effect and pain sound. |
+| `RemoveHealth` | Health removed per interval from dirt or temperature damage. |
+| `TempFormat` | `'celsius'` or `'fahrenheit'`. |
+| `TempFeature` | Enable temperature damage and clothing warmth. |
+| `Wearing*` | Warmth added per clothing slot. |
+| `EnableNoWarmthJobs`, `NoWarmthJobs` | Job types that ignore clothing warmth. |
+| `MinTemp`, `MaxTemp` | Temperature range before health damage (same unit as `TempFormat`). |
+| `FlyEffect`, `MinCleanliness` | Flies effect toggle and the cleanliness level that triggers it. |
+| `IconColors` | Colours for each icon state. |
+
+## Exports (client)
+
+```lua
+exports['rsg-hud']:GetOutlawStatus()       -- number
+exports['rsg-hud']:GetCurrentTemperature() -- number, in Config.TempFormat units
+```
+
+## Events (client)
+
+```lua
+TriggerClientEvent('hud:client:UpdateNeeds', src, hunger, thirst, cleanliness)
+TriggerClientEvent('hud:client:UpdateHunger', src, hunger)
+TriggerClientEvent('hud:client:UpdateThirst', src, thirst)
+TriggerClientEvent('hud:client:UpdateCleanliness', src, cleanliness)
+TriggerClientEvent('hud:client:UpdateStress', src, stress)
+TriggerClientEvent('hud:client:GainStress', src, amount)
+TriggerClientEvent('hud:client:RelieveStress', src, amount) -- ignored for job type 'leo'
+TriggerClientEvent('hud:client:ToggleEditMode', src)
+TriggerClientEvent('HideAllUI', src)                        -- toggles the whole HUD
+```
+
+## Notes
+
+- Hunger, thirst, stress and cleanliness live in client-set state bags. Treat them as client-trusted.
+- Custom currency formatting is in `formatMoney` in `html/app.js`.
+
+## Credits
+
+- RSG Developers for building this script
+- Staff Member Phil for updates to this script

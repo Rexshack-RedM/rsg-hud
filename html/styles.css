@@ -1,296 +1,377 @@
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Yantramanav:wght@100;300;400;500;700;900&display=swap');
-@import url('https://fonts.cdnfonts.com/css/pricedown');
-@import url('https://fonts.cdnfonts.com/css/chinese-rocks');
-
-#main-container {
-    width: 100%;
-    height: auto;
+:root {
+    --rdr-black: #000000;
+    --rdr-panel: #0a0a0a;
+    --rdr-panel-2: #141414;
+    --rdr-leather: #1c1c1c;
+    --rdr-red: #4a4a4a;
+    --rdr-red-bright: #2a2a2a;
+    --rdr-gold: #ffffff;
+    --rdr-gold-dim: #5a5a5a;
+    --rdr-parchment: #ffffff;
+    --rdr-text: #f2f2f2;
+    --rdr-muted: #9a9a9a;
+    --rdr-green: #5a7d4f;
+    --rdr-cost-ok: #6fbf73;
+    --rdr-cost-over: #e0554f;
+    --rdr-amber: #d9a441;
+    --rdr-shadow: rgba(0, 0, 0, 0.85);
 }
 
-/* Prevent scrollbars and ensure proper viewport */
-body, html {
-    margin: 0;
-    padding: 0;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    background: transparent;
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--rdr-text);
     width: 100vw;
     height: 100vh;
-    box-sizing: border-box;
 }
 
-* {
-    box-sizing: border-box;
+.hidden { display: none !important; }
+
+#main-container {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
 }
 
-/* Money */
+/* ============ MONEY CHIPS ============ */
 
 #money-container {
     position: absolute;
     right: 2vw;
     top: 5vh;
-    font-weight: 400;
-    font-size: 30px;
-  }
-  
-  #sign {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #ac98009a;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
 
-  #signbank {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #d4af3788;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
+.money-chip { min-width: 0; }
 
-  .gold-icon {
-    width: 1em;
-    height: 1em;
-    margin-right: 0.2em;
-    object-fit: contain;
-    vertical-align: middle;
-  }
-  
-  #plus {
-    font-size: 50px;
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #ac98009a;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
-  
-  #minus {
-    font-size: 50px;
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #ac000084;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
-  
-  #bank {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #d4af3787;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
+.money-chip:empty { display: none; }
 
-  #gold {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #d4af37;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
+.money-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15)), linear-gradient(160deg, var(--rdr-panel-2), var(--rdr-panel) 60%, var(--rdr-black));
+    border: 1px solid rgba(201,162,75,0.18);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
 
+.money-line i {
+    font-size: 13px;
+    color: var(--rdr-muted);
+    width: 18px;
+    text-align: center;
+}
 
-  #money {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #ffffff84;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
-  
-  #bloodmoney {
-    font-family: 'Chinese Rocks Rg', sans-serif;
-    text-align: right;
-    color: #b0252587;
-    text-shadow: -1px -1px 0 rgba(0,0,0, 0.7), 1px -1px 0 rgba(0,0,0, 0.7), -1px 1px 0 rgba(0,0,0, 0.7), 1px 1px 0 rgba(0,0,0, 0.7);
-  }
+.money-value {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--rdr-parchment);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
 
-/* Player HUD */
+#sign { color: var(--rdr-muted); font-weight: 600; font-size: 13px; }
 
-#playerhud {
+.money-chip-blood .money-value { color: var(--rdr-cost-over); }
+.money-chip-blood .money-line i { color: var(--rdr-cost-over); }
+
+.money-delta { font-size: 15px; font-weight: 700; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+.money-delta-plus { color: var(--rdr-cost-ok); }
+.money-delta-minus { color: var(--rdr-cost-over); }
+
+/* ============ STAT STRIP (horizontal bottom, first-load layout) ============ */
+
+#ui-container {
     position: fixed;
-    left: 0vh;
-    bottom: 0.5vw;
-    display: inline-block;
+    left: 0;
+    right: 0;
+    bottom: 1.5vh;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    pointer-events: none;
+}
+#ui-container > * { pointer-events: auto; }
+
+#playerHud { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+
+#stat-strip {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+    justify-content: center;
+    max-width: 96vw;
 }
 
-.progress {
-    margin-top: 5px!important; 
- }
-
-/* Animation */
-
-.slide-fade-enter-active {
-    transition: all .3s ease-out;
+.stat-group-player {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: stretch;
+    justify-content: center;
 }
 
-.slide-fade-leave-active {
-    transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+.stat-group-horse {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
 }
 
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-    transform: translateX(20px);
-    opacity: 0;
+.stat-group-rows {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: stretch;
+    justify-content: center;
 }
 
-/* Draggable HUD Elements */
+.stat-group-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--rdr-muted);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
 
-.draggable-element {
+/* ============ STAT CIRCLES (draggable, round) ============ */
+
+.stat-row.stat-circle {
+    width: 72px;
+    height: 72px;
+    flex: 0 0 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+    background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px),
+        linear-gradient(160deg, var(--rdr-panel-2), var(--rdr-panel) 60%, var(--rdr-black));
+    background-color: rgba(10,10,10,0.72);
+    border: 1px solid rgba(201,162,75,0.18);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: visible;
+    transition: border-color 0.15s ease, filter 0.15s ease;
+}
+
+.stat-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.stat-ring .ring-track {
+    fill: none;
+    stroke: rgba(0,0,0,0.45);
+    stroke-width: 2.2;
+}
+
+.stat-ring .ring-fill {
+    fill: none;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.35s ease, stroke 0.35s ease;
+}
+
+.stat-ring .ring-fill.stat-good { stroke: var(--rdr-cost-ok); }
+.stat-ring .ring-fill.stat-warn { stroke: var(--rdr-amber); }
+.stat-ring .ring-fill.stat-bad { stroke: var(--rdr-cost-over); }
+
+.stat-circle-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat-circle .stat-icon {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 35% 30%, #2e2e2e, #141414 70%);
+    border: 1px solid var(--rdr-gold-dim);
+    color: var(--rdr-parchment);
+    font-size: 11px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+.stat-circle .stat-icon i { font-size: 11px; }
+
+.stat-circle .stat-pct {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--rdr-parchment);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+/* ============ MINI BADGES (voice / mail / outlaw) ============ */
+
+#mini-badges {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: flex-start;
+    justify-content: center;
     position: relative;
 }
 
+.mini-badge {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #2e2e2e, #141414 70%);
+    border: 1px solid var(--rdr-gold-dim);
+    color: var(--rdr-muted);
+    font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5);
+    transition: all 0.15s ease;
+}
+
+.mini-badge.talking { border-color: var(--rdr-cost-over); color: var(--rdr-cost-over); filter: brightness(1.2); }
+.mini-badge.hasmail { border-color: var(--rdr-gold); color: var(--rdr-gold); filter: brightness(1.2); }
+.mini-badge.outlaw { border-color: var(--rdr-cost-over); color: var(--rdr-cost-over); }
+
+/* ============ ANIMATIONS ============ */
+
+.slide-fade-enter-active { transition: all 0.25s ease; }
+.slide-fade-leave-active { transition: all 0.25s ease; }
+.slide-fade-enter-from, .slide-fade-leave-to { transform: translateX(30px); opacity: 0; }
+
+/* ============ DRAGGABLE / EDIT MODE ============ */
+
+.draggable-element { position: relative; }
+
 .draggable-element.edit-mode {
-    border: 2px dashed rgba(255, 255, 255, 0.5);
-    border-radius: 8px;
-    padding: 5px;
-    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px dashed var(--rdr-gold-dim);
+    border-radius: 2px;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.55);
+    pointer-events: auto;
 }
 
 .draggable-element.dragging {
-    border-color: #00ff00;
-    background-color: rgba(0, 255, 0, 0.1);
+    border-color: var(--rdr-gold);
+    background-color: rgba(255, 255, 255, 0.04);
     z-index: 9999;
 }
 
 .drag-handle {
     position: absolute;
-    top: -25px;
+    top: -24px;
     left: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-family: 'Work Sans', sans-serif;
-    border-radius: 4px;
+    background: linear-gradient(180deg, #1c1c1c, #0a0a0a);
+    border: 1px solid var(--rdr-gold-dim);
+    border-radius: 2px;
+    color: var(--rdr-muted);
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: 'Roboto', sans-serif;
     cursor: move;
     user-select: none;
     z-index: 1000;
     white-space: nowrap;
 }
 
-.drag-handle:hover {
-    background-color: rgba(0, 0, 0, 0.9);
-}
+.drag-handle:hover { color: var(--rdr-text); border-color: var(--rdr-gold); }
 
-.draggable-element.edit-mode .drag-handle {
-    display: block !important;
-}
+.draggable-element.edit-mode .drag-handle { display: block !important; }
+.draggable-element:not(.edit-mode) .drag-handle { display: none !important; }
 
-.draggable-element:not(.edit-mode) .drag-handle {
-    display: none !important;
-}
+/* Per-row handles float above the bar so the strip doesn't shift when entering edit mode */
+.stat-row .drag-handle { position: absolute; top: -22px; left: 0; }
+.mini-badge .drag-handle { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); }
+.stat-row.edit-mode, .mini-badge.edit-mode { margin-top: 0; padding-top: 2px; }
 
-/* Individual Status Circle Draggable Elements */
+.stat-row.edit-mode { cursor: move; }
+.stat-row.edit-mode:hover { filter: brightness(1.15); }
+.mini-badge.edit-mode { cursor: move; }
 
-.status-circle {
-    display: inline-block;
-    position: relative;
-    transition: transform 0.1s ease;
-}
-
-.status-circle.edit-mode {
-    /* Remove visual container - no borders, background, or padding */
-    border: none;
-    background-color: transparent;
-    padding: 0;
-    margin: 0;
-}
-
-.status-circle.dragging {
-    border-color: #00ff00;
-    background-color: rgba(0, 255, 0, 0.15);
-    z-index: 9999;
-    position: fixed !important;
-    max-width: 100vw;
-    max-height: 100vh;
-}
-
-.status-circle .drag-handle {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-family: 'Work Sans', sans-serif;
-    border-radius: 3px;
-    cursor: move;
-    user-select: none;
-    z-index: 1001;
-    white-space: nowrap;
-    font-weight: 500;
-    pointer-events: auto;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.status-circle .drag-handle:hover {
-    background-color: rgba(0, 0, 0, 1);
-}
-
-/* Special handling for voice element that toggles visibility */
-.status-circle[data-element="voice"].edit-mode {
-    pointer-events: all !important;
-}
-
-/* Make status circles show they're draggable in edit mode */
-.status-circle.edit-mode {
-    cursor: move;
-}
-
-.status-circle.edit-mode:hover {
-    filter: brightness(1.1);
-}
-
-/* Resize Handle for Status Circles */
 .resize-handle {
     position: absolute;
     bottom: 5px;
     right: 5px;
     width: 12px;
     height: 12px;
-    background-color: rgba(0, 255, 0, 0.9);
-    border: 1px solid rgba(255, 255, 255, 1);
+    background: radial-gradient(circle at 35% 30%, #2e2e2e, #0a0a0a 75%);
+    border: 1px solid var(--rdr-gold-dim);
     border-radius: 50%;
     cursor: nw-resize;
     z-index: 1002;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 6px;
-    color: white;
+    color: var(--rdr-text);
     user-select: none;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.resize-handle:hover {
-    background-color: rgba(0, 255, 0, 1);
-    transform: scale(1.2);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
-}
+.resize-handle:hover { border-color: var(--rdr-gold); filter: brightness(1.3); transform: scale(1.2); }
 
-.resize-handle::before {
-    content: '⌟';
-    font-size: 10px;
-    font-weight: bold;
-    transform: rotate(180deg);
-}
+.resize-handle::before { content: '\2198'; font-size: 8px; font-weight: bold; }
 
-/* Resizing state */
-.status-circle.resizing {
-    border-color: #00ff00;
-    background-color: rgba(0, 255, 0, 0.1);
+.stat-row.resizing, .mini-badge.resizing {
+    border-color: var(--rdr-gold);
+    background-color: rgba(255, 255, 255, 0.04);
     z-index: 9999;
 }
 
-/* Original container positioning when elements are not dragged */
-#ui-container {
-    position: fixed;
-    left: 1vh;
-    bottom: 2.5vw;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-end;
+@media (max-width: 1100px) {
+    .stat-row:not(.stat-circle) { width: 160px; }
+    .stat-row.stat-circle { width: 64px; height: 64px; flex-basis: 64px; }
 }
 
+@media (max-width: 700px) {
+    .stat-row:not(.stat-circle) { width: 150px; }
+    .stat-row.stat-circle { width: 60px; height: 60px; flex-basis: 60px; }
+    .money-value { font-size: 14px; }
+}

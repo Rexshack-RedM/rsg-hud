@@ -6,7 +6,6 @@ Config = {}
 Config.StatusInterval = 5000 -- how often to update hunger/thirst status in milliseconds
 Config.HungerRate = 0.01 -- Rate at which hunger goes down.
 Config.ThirstRate = 0.01 -- Rate at which thirst goes down.
-Config.CleanlinessRate = 0.01 -- Rate at which cleanliness goes down.
 
 ----------------------------------
 -- stress settings
@@ -38,7 +37,7 @@ Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when ta
 ----------------------------------
 -- minimap / compass settings
 ----------------------------------
-Config.OnFootMinimap = false -- set to true/false to disable/enable minimap when on foot
+Config.OnFootMinimap = true -- set to true/false to disable/enable minimap when on foot
 Config.OnFootCompass = false -- true = have the minimap set to a compass instead of off or normal minimap
 Config.MountMinimap = true  -- set to false if you want to disable the minimap when on mount
 Config.MountCompass  = false -- set to true if you want to have a compass instead of normal minimap while on a mount
@@ -99,7 +98,7 @@ Config.NoWarmthJobs = {
 -- warmth limit before impacts health  (temp feature must be enabled)
 ----------------------------------
 Config.MinTemp = -5
-Config.MaxTemp = 40
+Config.MaxTemp = 55
 
 ----------------------------------
 -- cleanliness limit before impacts health
@@ -110,7 +109,7 @@ Config.MinCleanliness = 30
 ----------------------------------
 -- amount of health to remove if min/max temp reached
 ----------------------------------
-Config.RemoveHealth = 5
+Config.RemoveHealth = 1
 
 ----------------------------------
 -- stress settings
@@ -177,59 +176,58 @@ Config.EffectInterval = {
 -- HUD icon colors configuration
 ----------------------------------
 Config.IconColors = {
-    -- Player Status Icons
+    -- Player Status Icons (RDR2 leather & gold: monochrome + semantic states)
     ['voice'] = {
         normal = '#FFFFFF',      -- White when not talking
-        active = '#FF0000'       -- Red when talking
+        active = '#e0554f'       -- Red when talking
     },
     ['health'] = {
         normal = '#FFFFFF',      -- White when healthy
-        low = '#FF0000'          -- Red when low health (<=30%)
+        low = '#e0554f'          -- Red when low health (<=30%)
     },
     ['stamina'] = {
         normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low stamina (<=30%)
+        low = '#e0554f'          -- Red when low stamina (<=30%)
     },
     ['hunger'] = {
         normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low hunger (<=30%)
+        low = '#e0554f'          -- Red when low hunger (<=30%)
     },
     ['thirst'] = {
         normal = '#FFFFFF',      -- White when full
-        low = '#FF0000'          -- Red when low thirst (<=30%)
+        low = '#e0554f'          -- Red when low thirst (<=30%)
     },
     ['cleanliness'] = {
         normal = '#FFFFFF',      -- White when clean
-        low = '#FF0000'          -- Red when dirty (<=30%)
+        low = '#e0554f'          -- Red when dirty (<=30%)
     },
     ['stress'] = {
         normal = '#FFFFFF',      -- White (stress icon color)
-        low = '#FF0000'          -- Red when stressed (>=70%)
     },
     ['temp'] = {
-        cold = '#FDD021',        -- Yellow when cold (<=30)
-        normal = '#CFBCAE'       -- Light brown when normal
+        cold = '#d9a441',        -- Amber when cold
+        normal = '#f2f2f2'       -- Soft white when normal
     },
     ['mail'] = {
         normal = '#FFFFFF',      -- White when no mail
-        hasmail = '#FFD700'      -- Gold when has mail
+        hasmail = '#ffffff'      -- White highlight when has mail
     },
     ['outlaw'] = {
-        normal = '#00FF00',      -- Green when not outlaw
-        active = '#FF0000'       -- Red when outlaw
+        normal = '#6fbf73',      -- Green when not outlaw
+        active = '#e0554f'       -- Red when outlaw
     },
-    
+
     -- Horse Status Icons
     ['horse_health'] = {
-        normal = '#a16600',      -- Brown/orange for horse health
-        low = '#FF0000'          -- Red when low
+        normal = '#f2f2f2',      -- Soft white for horse health
+        low = '#e0554f'          -- Red when low
     },
     ['horse_stamina'] = {
-        normal = '#a16600',      -- Brown/orange for horse stamina
-        low = '#FF0000'          -- Red when low
+        normal = '#f2f2f2',      -- Soft white for horse stamina
+        low = '#e0554f'          -- Red when low
     },
     ['horse_clean'] = {
-        normal = '#a16600',      -- Brown/orange for horse cleanliness
-        low = '#FF0000'          -- Red when dirty
+        normal = '#f2f2f2',      -- Soft white for horse cleanliness
+        low = '#e0554f'          -- Red when dirty
     }
 }

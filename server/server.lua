@@ -1,50 +1,25 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-local ResetStress = false
-lib.locale()
 
-RSGCore.Commands.Add('cash', 'Check Cash Balance', {}, false, function(source, args)
-    local Player = RSGCore.Functions.GetPlayer(source)
-    local cashamount = Player.PlayerData.money.cash
-    if cashamount ~= nil then
-        TriggerClientEvent('hud:client:ShowAccounts', source, 'cash', cashamount)
-    else
-        return
-    end
-end)
+local function addBalanceCommand(account, help)
+    RSGCore.Commands.Add(account, help, {}, false, function(source)
+        local Player = RSGCore.Functions.GetPlayer(source)
+        local amount = Player and Player.PlayerData.money[account]
+        if amount then
+            TriggerClientEvent('hud:client:ShowAccounts', source, account, amount)
+        end
+    end)
+end
 
-RSGCore.Commands.Add('gold', 'Check Gold Balance', {}, false, function(source, args)
-    local Player = RSGCore.Functions.GetPlayer(source)
-    local goldamount = Player.PlayerData.money.gold
-    if goldamount ~= nil then
-        TriggerClientEvent('hud:client:ShowAccounts', source, 'gold', goldamount)
-    else
-        return
-    end
-end)
-
-RSGCore.Commands.Add('bloodmoney', 'Check Bloodmoney Balance', {}, false, function(source, args)
-    local Player = RSGCore.Functions.GetPlayer(source)
-    local bloodmoneyamount = Player.PlayerData.money.bloodmoney
-    if bloodmoneyamount ~= nil then
-        TriggerClientEvent('hud:client:ShowAccounts', source, 'bloodmoney', bloodmoneyamount)
-    else
-        return
-    end
-end)
+addBalanceCommand('cash', 'Check Cash Balance')
+addBalanceCommand('bloodmoney', 'Check Bloodmoney Balance')
 
 ---------------------------------
 -- get outlaw status
 ---------------------------------
 RSGCore.Functions.CreateCallback('hud:server:getoutlawstatus', function(source, cb)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if Player ~= nil then
-        MySQL.query('SELECT outlawstatus FROM players WHERE citizenid = ?', {Player.PlayerData.citizenid}, function(result)
-            if result[1] then
-                cb(result[1].outlawstatus)
-            else
-                cb(0)
-            end
-        end)
-    end
+    local Player = RSGCore.Functions.GetPlayer(source)
+    if not Player then return cb(0) end
+
+    local status = MySQL.scalar.await('SELECT outlawstatus FROM players WHERE citizenid = ?', { Player.PlayerData.citizenid })
+    cb(tonumber(status) or 0)
 end)

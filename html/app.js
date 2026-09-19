@@ -4,14 +4,12 @@ const moneyHud = Vue.createApp({
     data() {
         return {
             cash: 0,
-            gold: 0,
             bloodmoney: 0,
             bank: 0,
             amount: 0,
             plus: false,
             minus: false,
             showCash: false,
-            showGold: false,
             showBloodmoney: false,
             showBank: false,
             showUpdate: false,
@@ -19,15 +17,15 @@ const moneyHud = Vue.createApp({
             locales: {}
         }
     },
-    destroyed() {
+    created() {
+        this.timers = {};
+    },
+    unmounted() {
         window.removeEventListener('message', this.listener);
     },
     mounted() {
-        this.listener = window.addEventListener('message', (event) => {
+        this.listener = (event) => {
             switch (event.data.action) {
-                case 'showconstant':
-                    this.showConstant(event.data)
-                    break;
                 case 'update':
                     this.update(event.data)
                     break;
@@ -41,7 +39,8 @@ const moneyHud = Vue.createApp({
                     this.locales = event.data.locales
                     break;
             }
-        });
+        };
+        window.addEventListener('message', this.listener);
     },
     methods: {
         // CONFIGURE YOUR CURRENCY HERE
@@ -55,15 +54,17 @@ const moneyHud = Vue.createApp({
             });
             return formatter.format(value);
         },
-        showConstant(data) {
-            this.showCash = true;
-            this.showGold = true;
-            this.showBloodmoney = true;
-            this.showBank = true;
-            this.cash = data.cash;
-            this.gold = data.gold;
-            this.bloodmoney = data.bloodmoney;
-            this.bank = data.bank;
+        // show one account row for `ms`, restarting its timer if already visible
+        flash(type, ms, updateMs) {
+            const flag = { cash: 'showCash', bloodmoney: 'showBloodmoney', bank: 'showBank' }[type];
+            if (!flag) return;
+            this[flag] = true;
+            clearTimeout(this.timers[flag]);
+            this.timers[flag] = setTimeout(() => this[flag] = false, ms);
+            if (updateMs) {
+                clearTimeout(this.timers.update);
+                this.timers.update = setTimeout(() => this.showUpdate = false, updateMs);
+            }
         },
         update(data) {
             this.showUpdate = true;
@@ -71,82 +72,15 @@ const moneyHud = Vue.createApp({
             this.bank = data.bank;
             this.bloodmoney = data.bloodmoney;
             this.cash = data.cash;
-            this.gold = data.gold;
-            this.minus = data.minus;
-            this.plus = data.plus;
-            if (data.type === 'cash') {
-                if (data.minus) {
-                    this.showCash = true;
-                    this.minus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showCash = false, 2000)
-                } else {
-                    this.showCash = true;
-                    this.plus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showCash = false, 2000)
-                }
-            }
-            if (data.type === 'gold') {
-                if (data.minus) {
-                    this.showGold = true;
-                    this.minus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showGold = false, 2000)
-                } else {
-                    this.showGold = true;
-                    this.plus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showGold = false, 2000)
-                }
-            }
-            if (data.type === 'bloodmoney') {
-                if (data.minus) {
-                    this.showBloodmoney = true;
-                    this.minus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showBloodmoney = false, 2000)
-                } else {
-                    this.showBloodmoney = true;
-                    this.plus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showBloodmoney = false, 2000)
-                }
-            }
-            if (data.type === 'bank') {
-                if (data.minus) {
-                    this.showBank = true;
-                    this.minus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showBank = false, 2000)
-                } else {
-                    this.showBank = true;
-                    this.plus = true;
-                    setTimeout(() => this.showUpdate = false, 1000)
-                    setTimeout(() => this.showBank = false, 2000)
-                }
-            }
+            this.minus = !!data.minus;
+            this.plus = !data.minus;
+            this.flash(data.type, 2000, 1000);
         },
         showAccounts(data) {
-            if (data.type === 'cash' && !this.showCash) {
-                this.showCash = true;
-                this.cash = data.cash;
-                setTimeout(() => this.showCash = false, 3500);
-            }
-            else if (data.type === 'gold' && !this.showGold) {
-                this.showGold = true;
-                this.gold = data.gold;
-                setTimeout(() => this.showGold = false, 3500);
-            }
-            else if (data.type === 'bloodmoney' && !this.showBloodmoney) {
-                this.showBloodmoney = true;
-                this.bloodmoney = data.bloodmoney;
-                setTimeout(() => this.showBloodmoney = false, 3500);
-            }
-            else if (data.type === 'bank' && !this.showBank) {
-                this.showBank = true;
-                this.bank = data.bank;
-                setTimeout(() => this.showBank = false, 3500);
+            const flag = { cash: 'showCash', bloodmoney: 'showBloodmoney', bank: 'showBank' }[data.type];
+            if (flag && !this[flag]) {
+                this[data.type] = data[data.type];
+                this.flash(data.type, 3500);
             }
         }
     }
@@ -170,8 +104,7 @@ const playerHud = {
             horsestamina: 0,
             horseclean: 0,
             youhavemail: false,
-            outlawstatus: 0,
-            showoutlawstatus: false,
+            outlawstatus: true,
             show: false,
             talking: false,
             showVoice: true,
@@ -185,36 +118,87 @@ const playerHud = {
             showHorseStamina: false,
             showHorseHealth: false,
             showHorseClean: false,
-            showHorseStaminaColor: "#a16600",
-            showHorseHealthColor: "#a16600",
-            showHorseCleanColor: "#a16600",
+            showHorseStaminaColor: "#f2f2f2",
+            showHorseHealthColor: "#f2f2f2",
+            showHorseCleanColor: "#f2f2f2",
             showYouHaveMail: true,
             talkingColor: "#FFFFFF",
             showTemp: true,
-            showStressColor: "#FFFFFF",
             editMode: false,
+            voiceAlwaysVisible: true,
+            showHealthColor: "#FFFFFF",
+            showStaminaColor: "#FFFFFF",
+            showHungerColor: "#FFFFFF",
+            showThirstColor: "#FFFFFF",
+            showCleanlinessColor: "#FFFFFF",
+            showTempColor: "#f2f2f2",
+            showYouHaveMailColor: "#FFFFFF",
+            showOutLawColor: "#6fbf73",
+            showoutlawstatus: false,
             iconColors: {}, // Store config colors
             savedVisibility: null, // Store visibility states for edit mode
             locales: {} // Store locale translations
         }
     },
-    destroyed() {
+    unmounted() {
         window.removeEventListener('message', this.listener);
     },
     mounted() {
-        this.listener = window.addEventListener('message', (event) => {
+        this.listener = (event) => {
             if (event.data.action === 'hudtick') {
                 this.hudTick(event.data);
             } else if (event.data.action === 'toggleEditMode') {
                 this.toggleEditMode(event.data.enabled);
             } else if (event.data.action === 'setLocales') {
                 this.locales = event.data.locales;
+            } else if (event.data.action === 'setConfig') {
+                this.iconColors = event.data.iconColors || {};
+                this.voiceAlwaysVisible = event.data.voiceAlwaysVisible;
             }
-        });
+        };
+        window.addEventListener('message', this.listener);
+    },
+    computed: {
+        healthClass() { return this.barClass(this.health); },
+        staminaClass() { return this.barClass(this.stamina); },
+        hungerClass() { return this.barClass(this.hunger); },
+        thirstClass() { return this.barClass(this.thirst); },
+        cleanlinessClass() { return this.barClass(this.cleanliness); },
+        stressClass() { return this.barClassInvert(this.stress); },
+        tempClass() {
+            const t = parseFloat(this.temp) || 0;
+            if (t <= 0) return 'stat-bad';
+            if (t <= 10) return 'stat-warn';
+            return 'stat-good';
+        },
+        tempPct() {
+            const t = parseFloat(this.temp) || 0;
+            return Math.max(0, Math.min(100, Math.round((t + 10) / 50 * 100)));
+        },
+        horseHealthClass() { return this.barClass(this.horsehealth); },
+        horseStaminaClass() { return this.barClass(this.horsestamina); },
+        horseCleanClass() { return this.barClass(this.horseclean); }
     },
     methods: {
+        clampPct(v) {
+            const n = parseFloat(v) || 0;
+            return Math.max(0, Math.min(100, Math.round(n)));
+        },
+        barClass(v) {
+            const n = parseFloat(v) || 0;
+            if (n <= 30) return 'stat-bad';
+            if (n <= 70) return 'stat-warn';
+            return 'stat-good';
+        },
+        barClassInvert(v) {
+            const n = parseFloat(v) || 0;
+            if (n >= 70) return 'stat-bad';
+            if (n >= 40) return 'stat-warn';
+            return 'stat-good';
+        },
         hudTick(data) {
             this.show = data.show;
+            if (!data.show) return; // hidden ticks carry no stats
             this.health = data.health;
             this.stamina = parseInt(data.stamina);
             this.armor = data.armor;
@@ -235,11 +219,6 @@ const playerHud = {
                 this.showHorseClean = data.onHorse;
             }
             
-            // Store config colors if provided
-            if (data.iconColors) {
-                this.iconColors = data.iconColors;
-            }
-            
             if (data.onHorse) {
                 this.horsehealth = data.horsehealth;
                 this.horsestamina = data.horsestamina;
@@ -247,16 +226,16 @@ const playerHud = {
                 
                 // Set horse colors based on config
                 this.showHorseHealthColor = (data.horsehealth <= 30) ?
-                    (this.iconColors.horse_health?.low || "#FF0000") :
-                    (this.iconColors.horse_health?.normal || "#a16600");
+                    (this.iconColors.horse_health?.low || "#e0554f") :
+                    (this.iconColors.horse_health?.normal || "#f2f2f2");
                     
                 this.showHorseStaminaColor = (data.horsestamina <= 30) ?
-                    (this.iconColors.horse_stamina?.low || "#FF0000") :
-                    (this.iconColors.horse_stamina?.normal || "#a16600");
+                    (this.iconColors.horse_stamina?.low || "#e0554f") :
+                    (this.iconColors.horse_stamina?.normal || "#f2f2f2");
                     
                 this.showHorseCleanColor = (data.horseclean <= 30) ?
-                    (this.iconColors.horse_clean?.low || "#FF0000") :
-                    (this.iconColors.horse_clean?.normal || "#a16600");
+                    (this.iconColors.horse_clean?.low || "#e0554f") :
+                    (this.iconColors.horse_clean?.normal || "#f2f2f2");
             }
             
             // Don't modify visibility if in edit mode
@@ -269,7 +248,7 @@ const playerHud = {
             }
             
             if (data.health <= 30) {
-                this.showHealthColor = this.iconColors.health?.low || "#FF0000";
+                this.showHealthColor = this.iconColors.health?.low || "#e0554f";
             } else {
                 this.showHealthColor = this.iconColors.health?.normal || "#FFFFFF";
             }
@@ -284,24 +263,24 @@ const playerHud = {
             }
             
             if (parseInt(data.stamina) <= 30) {
-                this.showStaminaColor = this.iconColors.stamina?.low || "#FF0000";
+                this.showStaminaColor = this.iconColors.stamina?.low || "#e0554f";
             } else {
                 this.showStaminaColor = this.iconColors.stamina?.normal || "#FFFFFF";
             }
             if (data.hunger <= 30) {
-                this.showHungerColor = this.iconColors.hunger?.low || "#FF0000";
+                this.showHungerColor = this.iconColors.hunger?.low || "#e0554f";
             } else {
                 this.showHungerColor = this.iconColors.hunger?.normal || "#FFFFFF";
             }
             
             if (data.thirst <= 30) {
-                this.showThirstColor = this.iconColors.thirst?.low || "#FF0000";
+                this.showThirstColor = this.iconColors.thirst?.low || "#e0554f";
             } else {
                 this.showThirstColor = this.iconColors.thirst?.normal || "#FFFFFF";
             }
             
             if (data.cleanliness <= 30) {
-                this.showCleanlinessColor = this.iconColors.cleanliness?.low || "#FF0000";
+                this.showCleanlinessColor = this.iconColors.cleanliness?.low || "#e0554f";
             } else {
                 this.showCleanlinessColor = this.iconColors.cleanliness?.normal || "#FFFFFF";
             }
@@ -344,43 +323,31 @@ const playerHud = {
                     this.showYouHaveMail = false;
                 }
             }
-
-            if (data.stress >= 70) {
-                this.showStressColor = this.iconColors.stress?.low || "#FF0000";
-            } else {
-                this.showStressColor = this.iconColors.stress?.normal || "#FFFFFF";
-            }
             
             // Voice visibility - configurable
-            if (!this.editMode) {
-                if (data.voiceAlwaysVisible) {
+            if (this.voiceAlwaysVisible) {
+                this.showVoice = true;  // Always visible if config enabled
+            } else {
+                // Only visible when talking if config disabled
+                if (data.talking) {
                     this.showVoice = true;
                 } else {
-                    if (data.talking) {
-                        this.showVoice = true;
-                    } else {
-                        this.showVoice = false;
-                    }
+                    this.showVoice = false;
                 }
             }
             if (data.talking) {
-                this.talkingColor = this.iconColors.voice?.active || "#FF0000";
+                this.talkingColor = this.iconColors.voice?.active || "#e0554f";
             } else {
                 this.talkingColor = this.iconColors.voice?.normal || "#FFFFFF";
             }
-            // Temp always visible
-            if (data.temp >= 0) {
-                this.showTemp = true;
+            // data.temp is a string like "12°C", so parse it before comparing
+            if ((parseFloat(data.temp) || 0) <= 30) {
+                this.showTempColor = this.iconColors.temp?.cold || "#d9a441";
             } else {
-                this.showTemp = true;
-            }
-            if (data.temp <= 30) {
-                this.showTempColor = this.iconColors.temp?.cold || "#FDD021";
-            } else {
-                this.showTempColor = this.iconColors.temp?.normal || "#CFBCAE";
+                this.showTempColor = this.iconColors.temp?.normal || "#f2f2f2";
             }
             if (data.youhavemail) {
-                this.showYouHaveMailColor = this.iconColors.mail?.hasmail || "#FFD700";
+                this.showYouHaveMailColor = this.iconColors.mail?.hasmail || "#ffffff";
             } else {
                 this.showYouHaveMailColor = this.iconColors.mail?.normal || "#FFFFFF";
             }
@@ -395,9 +362,9 @@ const playerHud = {
             }
             
             if (data.outlawstatus) {
-                this.showOutLawColor = this.iconColors.outlaw?.active || "#FF0000";
+                this.showOutLawColor = this.iconColors.outlaw?.active || "#e0554f";
             } else {
-                this.showOutLawColor = this.iconColors.outlaw?.normal || "#00FF00";
+                this.showOutLawColor = this.iconColors.outlaw?.normal || "#6fbf73";
             }
         },
         
@@ -415,7 +382,6 @@ const playerHud = {
                     showThirst: this.showThirst,
                     showCleanliness: this.showCleanliness,
                     showStress: this.showStress,
-                    showVoice: this.showVoice,
                     showYouHaveMail: this.showYouHaveMail,
                     showHorseHealth: this.showHorseHealth,
                     showHorseStamina: this.showHorseStamina,
@@ -431,7 +397,6 @@ const playerHud = {
                 this.showThirst = true;
                 this.showCleanliness = true;
                 this.showStress = true;
-                this.showVoice = true;
                 this.showYouHaveMail = true;
                 this.showHorseHealth = true;
                 this.showHorseStamina = true;
@@ -447,7 +412,6 @@ const playerHud = {
                     this.showThirst = this.savedVisibility.showThirst;
                     this.showCleanliness = this.savedVisibility.showCleanliness;
                     this.showStress = this.savedVisibility.showStress;
-                    this.showVoice = this.savedVisibility.showVoice;
                     this.showYouHaveMail = this.savedVisibility.showYouHaveMail;
                     this.showHorseHealth = this.savedVisibility.showHorseHealth;
                     this.showHorseStamina = this.savedVisibility.showHorseStamina;
@@ -461,7 +425,6 @@ const playerHud = {
     }
 }
 const app = Vue.createApp(playerHud);
-app.use(Quasar)
 app.mount('#ui-container');
 
 
@@ -541,16 +504,16 @@ class HUDDragSystem {
             const element = document.querySelector(`[data-element="${elementName}"]`);
             if (element && this.positions[elementName]) {
                 const pos = this.positions[elementName];
-                // For status circles, use fixed positioning
-                if (element.classList.contains('status-circle')) {
-                    element.style.position = 'fixed';
+                // Money uses absolute positioning, individual rows / badges use fixed
+                if (element.id === 'money-container') {
+                    // For containers like money
+                    element.style.position = 'absolute';
                     element.style.left = pos.x + 'px';
                     element.style.top = pos.y + 'px';
                     element.style.right = 'auto';
                     element.style.bottom = 'auto';
                 } else {
-                    // For containers like money
-                    element.style.position = 'absolute';
+                    element.style.position = 'fixed';
                     element.style.left = pos.x + 'px';
                     element.style.top = pos.y + 'px';
                     element.style.right = 'auto';
@@ -603,13 +566,13 @@ class HUDDragSystem {
             e.preventDefault();
             this.startResizing(e.target.parentElement, e);
         }
-        // Check if clicked on a status circle or its contents (but not resize handle)
+        // Check if clicked on an individual bar/badge or its contents (but not resize handle)
         else {
-            // Find the nearest status circle container
-            let statusCircle = e.target.closest('.status-circle');
-            if (statusCircle && !e.target.classList.contains('resize-handle')) {
+            // Find the nearest draggable element (each stat row / badge drags alone)
+            let dragTarget = e.target.closest('.stat-row, .mini-badge, #money-container');
+            if (dragTarget && !e.target.classList.contains('resize-handle')) {
                 e.preventDefault();
-                this.startDragging(statusCircle, e);
+                this.startDragging(dragTarget, e);
             }
         }
     }
@@ -625,16 +588,16 @@ class HUDDragSystem {
             y: e.clientY - rect.top
         };
         
-        // Set positioning based on element type
-        if (element.classList.contains('status-circle')) {
-            element.style.position = 'fixed';
+        // Pin at viewport coords. Bars/badges use fixed (outside the flex strip).
+        // #ui-container no longer has a transform, so fixed coords are viewport-relative.
+        if (element.id === 'money-container') {
+            element.style.position = 'absolute';
             element.style.left = rect.left + 'px';
             element.style.top = rect.top + 'px';
             element.style.right = 'auto';
             element.style.bottom = 'auto';
         } else {
-            // For containers like money
-            element.style.position = 'absolute';
+            element.style.position = 'fixed';
             element.style.left = rect.left + 'px';
             element.style.top = rect.top + 'px';
             element.style.right = 'auto';
@@ -732,20 +695,33 @@ class HUDDragSystem {
     }
     
     applySizeToElement(element, size) {
-        // Calculate scale factor based on default size (~60px)
+        const isCircle = element.classList.contains('stat-circle');
+        if (isCircle) {
+            // Circles: keep square aspect, scale ring + content together
+            element.style.width = size + 'px';
+            element.style.height = size + 'px';
+            element.style.transform = '';
+            element.style.transformOrigin = '';
+            return;
+        }
+        const isBar = element.classList.contains('stat-row');
+        if (isBar) {
+            // Bars: resize width only — no transform scaling (keeps label/pct layout stable)
+            element.style.width = size + 'px';
+            element.style.transform = '';
+            element.style.transformOrigin = '';
+            return;
+        }
+        // Badges / money: keep circular/square scale behaviour (base ~60px)
         const baseSize = 60;
         const scaleFactor = size / baseSize;
-        
-        // Use CSS transform to scale the entire element
         element.style.transform = `scale(${scaleFactor})`;
         element.style.transformOrigin = 'center center';
-        
-        // Update the container size for collision detection
         element.style.width = size + 'px';
         element.style.height = size + 'px';
-        
-        // Ensure the element maintains its visual appearance
-        element.style.display = 'inline-block';
+        if (!element.classList.contains('mini-badge')) {
+            element.style.display = 'inline-block';
+        }
     }
     
     stopResizing() {
@@ -810,34 +786,36 @@ class HUDDragSystem {
             moneyContainer.style.height = '';
         }
         
-        // Reset ui-container to lower position (bottom-left, but lower than original)
+        // Reset ui-container to bottom-center horizontal strip (first-load layout) — no transform (avoids fixed-position offset bug)
         const uiContainer = document.getElementById('ui-container');
         if (uiContainer) {
             uiContainer.style.position = 'fixed';
-            uiContainer.style.left = '1vh';
-            uiContainer.style.bottom = '2.5vw'; // Lowered from 2.5vw to 8vh for better positioning
-            uiContainer.style.right = 'auto';
+            uiContainer.style.left = '0';
+            uiContainer.style.right = '0';
+            uiContainer.style.bottom = '1.5vh';
             uiContainer.style.top = 'auto';
+            uiContainer.style.transform = '';
             uiContainer.style.display = 'flex';
             uiContainer.style.flexDirection = 'column';
-            uiContainer.style.gap = '5px';
+            uiContainer.style.gap = '8px';
+            uiContainer.style.alignItems = 'center';
         }
-        
-        // Reset all status circle elements to their default container positioning
-        const statusCircles = document.querySelectorAll('.status-circle');
-        statusCircles.forEach(circle => {
+
+        // Reset all individual stat row / badge elements to their default strip positioning
+        const statElements = document.querySelectorAll('.stat-row, .mini-badge');
+        statElements.forEach(el => {
             // Clear position overrides
-            circle.style.position = '';
-            circle.style.left = '';
-            circle.style.top = '';
-            circle.style.right = '';
-            circle.style.bottom = '';
-            circle.style.width = '';
-            circle.style.height = '';
-            circle.style.transform = ''; // Clear transform scaling
-            circle.style.transformOrigin = '';            
+            el.style.position = '';
+            el.style.left = '';
+            el.style.top = '';
+            el.style.right = '';
+            el.style.bottom = '';
+            el.style.width = '';
+            el.style.height = '';
+            el.style.transform = ''; // Clear transform scaling
+            el.style.transformOrigin = '';
             // Remove any drag/resize classes
-            circle.classList.remove('edit-mode', 'dragging', 'resizing');
+            el.classList.remove('edit-mode', 'dragging', 'resizing');
         });
         
         // Clear saved positions and sizes
@@ -848,18 +826,12 @@ class HUDDragSystem {
     }
 }
 
-// Helper function to get resource name
-function GetParentResourceName() {
-    // For RedM/FiveM NUI, the resource name is typically available in the URL
-    const url = window.location.href;
-    const match = url.match(/nui:\/\/([^/]+)/);
-    return match ? match[1] : 'rsg-hud';
-}
-
 // Initialize the drag system
 const hudDragSystem = new HUDDragSystem();
 
-// Global function to reset HUD positions (can be called from Lua)
-window.resetHUDPositions = () => {
-    hudDragSystem.resetToDefaults();
-};
+// Tell Lua the NUI is ready so it can send locales + colors
+fetch(`https://${GetParentResourceName()}/nuiReady`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify({})
+});

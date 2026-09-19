@@ -1,167 +1,139 @@
 <html>
 
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="styles.css" />
-    <link href="https://cdn.jsdelivr.net/npm/quasar@2.1.0/dist/quasar.prod.css" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/quasar@2.1.0/dist/quasar.umd.prod.js" defer></script>
     <script src="app.js" defer></script>
 </head>
 
 <body>
     <div id="main-container">
         <div id="money-container" class="draggable-element" data-element="money">
-            <div class="drag-handle" v-show="editMode">{{ locales.money_hud_label }}</div>
-            <div id="money-cash">
+            <div class="drag-handle" v-show="editMode">{{ locales.money_hud_label || 'Money' }}</div>
+            <div class="resize-handle" v-show="editMode"></div>
+            <div id="money-cash" class="money-chip">
                 <transition name="slide-fade">
-            <p v-if="showCash"><span id="sign">$&nbsp;</span><span id="money">{{(cash)}}</span></p>
+                    <div class="money-line" v-if="showCash"><i class="fa-solid fa-money-bill"></i><span class="money-value"><span id="sign">$&nbsp;</span><span id="money">{{ cash }}</span></span></div>
                 </transition>
             </div>
-            <div id="money-gold">
+            <div id="money-bloodmoney" class="money-chip money-chip-blood">
                 <transition name="slide-fade">
-            <p v-if="showGold"><img class="gold-icon" src="assets/gold.png" alt="Gold"><span id="gold">{{(gold)}}</span></p>
+                    <div class="money-line" v-if="showBloodmoney"><i class="fa-solid fa-droplet"></i><span class="money-value"><span id="sign">$&nbsp;</span><span id="bloodmoney">{{ bloodmoney }}</span></span></div>
                 </transition>
             </div>
-            <div id="money-bloodmoney">
+            <div id="money-bank" class="money-chip">
                 <transition name="slide-fade">
-            <p v-if="showBloodmoney"><span id="sign">$&nbsp;</span><span id="bloodmoney">{{(bloodmoney)}}</span></p>
+                    <div class="money-line" v-if="showBank"><i class="fa-solid fa-building-columns"></i><span class="money-value"><span id="sign">$&nbsp;</span><span id="bank">{{ bank }}</span></span></div>
                 </transition>
             </div>
-            <div id="money-bank">
-                <transition name="slide-fade">
-            <p v-if="showBank"><span id="sign">$&nbsp;</span><span id="bank">{{(bank)}}</span></p>
-                </transition>
-            </div>
-            <div id="money-change" v-if="showUpdate">
-        <p v-if="plus" id="money"><span id="plus">+&nbsp;</span><span id="money">{{(amount)}}</span></p>
-                <p v-else-if="minus" id="minus"><span id="minus">-&nbsp;</span><span id="money">{{(amount)}}</span></p>
+            <div id="money-change" class="money-chip money-chip-change" v-if="showUpdate">
+                <div class="money-line" v-if="plus"><span class="money-delta money-delta-plus">+&nbsp;{{ amount }}</span></div>
+                <div class="money-line" v-else-if="minus"><span class="money-delta money-delta-minus">-&nbsp;{{ amount }}</span></div>
             </div>
         </div>
-        <span>
-            <div id="ui-container">
-    <div id="playerHud" v-show="show">
-        <!-- Voice (already uses opacity, no change) -->
-        <div v-show="showVoice" class="draggable-element status-circle" data-element="voice">
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress show-value :value="voice" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10" :min="0" :max="100">
-                <q-circular-progress show-value :value="voice" size="3.20vh" :thickness="0.24" :style="{color: talkingColor}" :min="0" :max="15" center-color="grey-10">
-                    <q-icon name="fas fa-microphone" size="19.5px" :style="{color: talkingColor}" />
-                </q-circular-progress>
-            </q-circular-progress>
+        <div id="ui-container">
+            <div id="playerHud" v-show="show">
+                <div id="mini-badges">
+                    <div class="mini-badge draggable-element" data-element="voice" :style="{opacity: showVoice ? 1 : (editMode ? 0.3 : 0)}" :class="{ talking: talking }">
+                        <div class="drag-handle" v-show="editMode">Voice</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-microphone"></i>
+                    </div>
+                    <div class="mini-badge draggable-element" data-element="mail" :class="{ hasmail: youhavemail }" v-show="showYouHaveMail || editMode">
+                        <div class="drag-handle" v-show="editMode">{{ locales.mail_label || 'Mail' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-regular fa-envelope"></i>
+                    </div>
+                    <div class="mini-badge draggable-element" data-element="outlaw" :class="{ outlaw: showoutlawstatus }" v-show="showoutlawstatus || editMode">
+                        <div class="drag-handle" v-show="editMode">Outlaw</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-mask"></i>
+                    </div>
+                </div>
+
+                <div id="stat-strip">
+                    <div class="stat-group stat-group-player">
+                        <div class="stat-row draggable-element stat-circle" data-element="health" v-show="showHealth">
+                            <div class="drag-handle" v-show="editMode">{{ locales.health_label || 'Health' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="healthClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(health) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></span><span class="stat-pct">{{ Math.round(health) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="stamina" v-show="showStamina">
+                            <div class="drag-handle" v-show="editMode">{{ locales.stamina_label || 'Stamina' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="staminaClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(stamina) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-bolt"></i></span><span class="stat-pct">{{ Math.round(stamina) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="hunger" v-show="showHunger">
+                            <div class="drag-handle" v-show="editMode">{{ locales.hunger_label || 'Hunger' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="hungerClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(hunger) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-drumstick-bite"></i></span><span class="stat-pct">{{ Math.round(hunger) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="thirst" v-show="showThirst">
+                            <div class="drag-handle" v-show="editMode">{{ locales.thirst_label || 'Thirst' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="thirstClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(thirst) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-droplet"></i></span><span class="stat-pct">{{ Math.round(thirst) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="cleanliness" v-show="showCleanliness">
+                            <div class="drag-handle" v-show="editMode">{{ locales.clean_label || 'Clean' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="cleanlinessClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(cleanliness) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-pump-soap"></i></span><span class="stat-pct">{{ Math.round(cleanliness) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="stress" v-show="showStress">
+                            <div class="drag-handle" v-show="editMode">{{ locales.stress_label || 'Stress' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="stressClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(stress) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-brain"></i></span><span class="stat-pct">{{ Math.round(stress) }}%</span></div>
+                        </div>
+
+                        <div class="stat-row draggable-element stat-circle" data-element="temp" v-show="showTemp">
+                            <div class="drag-handle" v-show="editMode">{{ locales.temp_label || 'Temp' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="tempClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: tempPct + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-temperature-half"></i></span><span class="stat-pct">{{ temp }}&deg;</span></div>
+                        </div>
+                    </div>
+
+                    <div class="stat-group stat-group-horse" v-show="showHorseHealth || showHorseStamina || showHorseClean || editMode">
+                        <div class="stat-group-rows">
+                            <div class="stat-row draggable-element stat-circle" data-element="horse-health" v-show="showHorseHealth">
+                                <div class="drag-handle" v-show="editMode">{{ locales.horse_health_label || 'Horse HP' }}</div>
+                                <div class="resize-handle" v-show="editMode"></div>
+                                <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="horseHealthClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsehealth) + ' 100' }"/></svg>
+                                <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-heart"></i></span><span class="stat-pct">{{ Math.round(horsehealth) }}%</span></div>
+                            </div>
+
+                            <div class="stat-row draggable-element stat-circle" data-element="horse-stamina" v-show="showHorseStamina">
+                                <div class="drag-handle" v-show="editMode">{{ locales.horse_stamina_label || 'Horse SP' }}</div>
+                                <div class="resize-handle" v-show="editMode"></div>
+                                <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="horseStaminaClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsestamina) + ' 100' }"/></svg>
+                                <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-bolt"></i></span><span class="stat-pct">{{ Math.round(horsestamina) }}%</span></div>
+                            </div>
+
+                            <div class="stat-row draggable-element stat-circle" data-element="horse-clean" v-show="showHorseClean">
+                                <div class="drag-handle" v-show="editMode">{{ locales.horse_clean_label || 'Horse Clean' }}</div>
+                                <div class="resize-handle" v-show="editMode"></div>
+                                <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="horseCleanClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horseclean) + ' 100' }"/></svg>
+                                <div class="stat-circle-inner"><span class="stat-icon"><i class="fa-solid fa-pump-soap"></i></span><span class="stat-pct">{{ Math.round(horseclean) }}%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- Outlaw: Change v-if to v-show -->
-        <div v-show="showoutlawstatus" class="draggable-element status-circle" data-element="outlaw">
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="outlawstatus" size="3.20vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-mask" size="19px" :style="{color: showOutLawColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Temp: Already always true, but use v-show for consistency -->
-        <div v-show="showTemp" class="draggable-element status-circle" data-element="temp">
-            <div class="drag-handle" v-show="editMode">{{ locales.temp_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="temp" size="3.20vh" :thickness="0.22" color="white" track-color="grey-8" center-color="gray-10">
-              <template v-slot:default>
-                <div class="text-white" style="font-family: 'Work Sans', sans-serif">{{ temp }}</div>
-              </template>
-            </q-circular-progress>
-        </div>
-        
-        <!-- Health: Change v-if to v-show -->
-        <div v-show="showHealth" class="draggable-element status-circle" data-element="health">
-            <div class="drag-handle" v-show="editMode">{{ locales.health_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="health" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-heartbeat" size="19px" :style="{color: showHealthColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Stamina: Change v-if to v-show -->
-        <div v-show="showStamina" class="draggable-element status-circle" data-element="stamina">
-            <div class="drag-handle" v-show="editMode">{{ locales.stamina_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="stamina" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-bolt" size="19px" :style="{color: showStaminaColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Hunger: Change v-if to v-show -->
-        <div v-show="showHunger" class="draggable-element status-circle" data-element="hunger">
-            <div class="drag-handle" v-show="editMode">{{ locales.hunger_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="hunger" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-apple-alt" size="19px" :style="{color: showHungerColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Thirst: Change v-if to v-show -->
-        <div v-show="showThirst" class="draggable-element status-circle" data-element="thirst">
-            <div class="drag-handle" v-show="editMode">{{ locales.thirst_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="thirst" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-tint" size="19px" :style="{color: showThirstColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Cleanliness: Change v-if to v-show -->
-        <div v-show="showCleanliness" class="draggable-element status-circle" data-element="cleanliness">
-            <div class="drag-handle" v-show="editMode">{{ locales.clean_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="cleanliness" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-bath" size="19px" :style="{color: showCleanlinessColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Stress: Change v-if to v-show -->
-        <div v-show="showStress" class="draggable-element status-circle" data-element="stress">
-            <div class="drag-handle" v-show="editMode">{{ locales.stress_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="stress" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-brain" size="19px" :style="{color: showStressColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Mail: Change v-if to v-show -->
-        <div v-show="showYouHaveMail" class="draggable-element status-circle" data-element="mail">
-            <div class="drag-handle" v-show="editMode">{{ locales.mail_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="youhavemail ? 100 : 0" size="3.20vh" :thickness="0.22" color="black" track-color="black-9" center-color="gray-10">
-                <q-icon name="far fa-envelope" size="19px" :style="{color: showYouHaveMailColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Horse Health: Change v-if to v-show -->
-        <div v-show="showHorseHealth" class="draggable-element status-circle" data-element="horse-health">
-            <div class="drag-handle" v-show="editMode">{{ locales.horse_health_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="horsehealth" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-heart" size="19px" :style="{color: showHorseHealthColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Horse Stamina: Change v-if to v-show -->
-        <div v-show="showHorseStamina" class="draggable-element status-circle" data-element="horse-stamina">
-            <div class="drag-handle" v-show="editMode">{{ locales.horse_stamina_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="horsestamina" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-bolt" size="19px" :style="{color: showHorseStaminaColor}" />
-            </q-circular-progress>
-        </div>
-        
-        <!-- Horse Clean: Change v-if to v-show -->
-        <div v-show="showHorseClean" class="draggable-element status-circle" data-element="horse-clean">
-            <div class="drag-handle" v-show="editMode">{{ locales.horse_clean_label }}</div>
-            <div class="resize-handle" v-show="editMode"></div>
-            <q-circular-progress class="progress" show-value :value="horseclean" size="3.20vh" :thickness="0.22" color="white" track-color="black-9" center-color="gray-10">
-                <q-icon name="fas fa-bath" size="19px" :style="{color: showHorseCleanColor}" />
-            </q-circular-progress>
-        </div>
-    </div>
-</div>
-        </span>
     </div>
 </body>
 
