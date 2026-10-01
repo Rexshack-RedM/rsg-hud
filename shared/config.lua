@@ -33,6 +33,7 @@ Config.HideHorseCourageNative = true
 -- voice icon settings
 ----------------------------------
 Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when talking
+Config.ShowPercentages = false    -- default for the % under circle icons (players can toggle with /togglehudpct, saved per player)
 
 ----------------------------------
 -- minimap / compass settings
@@ -69,7 +70,7 @@ Config.TempFormat = 'celsius'
 Config.TempFeature = false
 
 ----------------------------------
--- warmth add while wearing (temp feature must be enabled)
+-- warmth add while wearing, in °C (temp feature must be enabled)
 ----------------------------------
 Config.WearingHat      = 0
 Config.WearingShirt    = 0
@@ -95,7 +96,7 @@ Config.NoWarmthJobs = {
 }
 
 ----------------------------------
--- warmth limit before impacts health  (temp feature must be enabled)
+-- warmth limit before impacts health, always in °C regardless of TempFormat (temp feature must be enabled)
 ----------------------------------
 Config.MinTemp = -5
 Config.MaxTemp = 55
@@ -148,27 +149,27 @@ Config.EffectInterval = {
     [1] = {
         min = 50,
         max = 60,
-        timeout = math.random(50000, 60000)
+        timeout = { 50000, 60000 } -- ms, random between min/max each cycle
     },
     [2] = {
         min = 60,
         max = 70,
-        timeout = math.random(40000, 50000)
+        timeout = { 40000, 50000 } -- ms, random between min/max each cycle
     },
     [3] = {
         min = 70,
         max = 80,
-        timeout = math.random(30000, 40000)
+        timeout = { 30000, 40000 } -- ms, random between min/max each cycle
     },
     [4] = {
         min = 80,
         max = 90,
-        timeout = math.random(20000, 30000)
+        timeout = { 20000, 30000 } -- ms, random between min/max each cycle
     },
     [5] = {
         min = 90,
         max = 100,
-        timeout = math.random(15000, 20000)
+        timeout = { 15000, 20000 } -- ms, random between min/max each cycle
     }
 }
 

@@ -1,7 +1,6 @@
 {
-    "sv_lang_1" : "Vous êtes en train de stresser",
-    "sv_lang_2" : "Vous avez un peu soif",
-    "sv_lang_3" : "Vous vous sentez soulagé du stress",
+    "stress_gain": "Vous êtes en train de stresser",
+    "stress_relief": "Vous vous sentez soulagé du stress",
     "edit_mode_on_title": "Mode Édition HUD",
     "edit_mode_on_desc": "ACTIVÉ - Cliquez et faites glisser les éléments du HUD pour les repositionner",
     "edit_mode_off_desc": "DÉSACTIVÉ",
@@ -18,5 +17,9 @@
     "mail_label": "✉️ Courrier",
     "horse_health_label": "🐎❤️ Santé Cheval",
     "horse_stamina_label": "🐎⚡ Endurance Cheval",
-    "horse_clean_label": "🐎🛁 Propreté Cheval"
+    "horse_clean_label": "🐎🛁 Propreté Cheval",
+    "voice_label": "🎙️ Voice",
+    "outlaw_label": "🎭 Outlaw",
+    "cmd_cash_help": "Check Cash Balance",
+    "cmd_bloodmoney_help": "Check Bloodmoney Balance"
 }

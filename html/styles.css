@@ -35,8 +35,6 @@ body {
     height: 100vh;
 }
 
-.hidden { display: none !important; }
-
 #main-container {
     position: fixed;
     inset: 0;
@@ -90,7 +88,7 @@ body {
     white-space: nowrap;
 }
 
-#sign { color: var(--rdr-muted); font-weight: 600; font-size: 13px; }
+
 
 .money-chip-blood .money-value { color: var(--rdr-cost-over); }
 .money-chip-blood .money-line i { color: var(--rdr-cost-over); }
@@ -149,19 +147,6 @@ body {
     gap: 6px;
     align-items: stretch;
     justify-content: center;
-}
-
-.stat-group-title {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--rdr-muted);
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
 }
 
 /* ============ STAT CIRCLES (draggable, round) ============ */
@@ -246,6 +231,20 @@ body {
     font-variant-numeric: tabular-nums;
     line-height: 1;
 }
+
+/* icon-only mode (% hidden): icon fills the space inside the ring */
+#playerHud.no-pct .stat-circle-inner {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+}
+#playerHud.no-pct .stat-circle .stat-icon {
+    width: 72%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
+}
+#playerHud.no-pct .stat-circle .stat-icon i { font-size: calc(var(--circle-size, 72px) * 0.32); }
 
 /* ============ MINI BADGES (voice / mail / outlaw) ============ */
 
@@ -374,4 +373,46 @@ body {
     .stat-row:not(.stat-circle) { width: 150px; }
     .stat-row.stat-circle { width: 60px; height: 60px; flex-basis: 60px; }
     .money-value { font-size: 14px; }
+}
+
+/* ============ HORSE STATS (visually distinct from player stats) ============ */
+.stat-group-horse {
+    position: relative;
+    padding-left: 14px;
+    margin-left: 4px;
+}
+/* divider between player + horse groups */
+.stat-group-horse::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10%;
+    bottom: 10%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--rdr-gold-dim), transparent);
+}
+.stat-row.stat-circle.horse-stat {
+    background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px),
+        linear-gradient(160deg, #2a2119, #17120d 60%, var(--rdr-black));
+    border-color: rgba(166,124,82,0.45);
+}
+.horse-stat .stat-ring .ring-track { stroke-dasharray: 1.2 1.2; }
+.horse-tag {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--rdr-text);
+    background: radial-gradient(circle at 35% 30%, #4a3a2a, #1c150f);
+    border: 1px solid rgba(166,124,82,0.7);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    pointer-events: none;
 }

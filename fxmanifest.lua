@@ -4,11 +4,11 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 lua54 'yes'
 
 description 'rsg-hud'
-version '2.1.11'
+version '2.2.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'config.lua'
+    'shared/config.lua'
 }
 
 client_scripts {

@@ -1,7 +1,6 @@
 {
-    "sv_lang_1" : "You are getting stressed",
-    "sv_lang_2" : "You are a bit thirsty",
-    "sv_lang_3" : "You are feeling relieved from stress",
+    "stress_gain": "You are getting stressed",
+    "stress_relief": "You are feeling relieved from stress",
     "edit_mode_on_title": "HUD Edit Mode",
     "edit_mode_on_desc": "ON - Click and drag the HUD elements to reposition them",
     "edit_mode_off_desc": "OFF",
@@ -18,5 +17,9 @@
     "mail_label": "✉️ Mail",
     "horse_health_label": "🐎❤️ Horse Health",
     "horse_stamina_label": "🐎⚡ Horse Stamina",
-    "horse_clean_label": "🐎🛁 Horse Clean"
+    "horse_clean_label": "🐎🛁 Horse Clean",
+    "voice_label": "🎙️ Voice",
+    "outlaw_label": "🎭 Outlaw",
+    "cmd_cash_help": "Check Cash Balance",
+    "cmd_bloodmoney_help": "Check Bloodmoney Balance"
 }

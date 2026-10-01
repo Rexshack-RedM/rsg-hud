@@ -2,9 +2,11 @@ local RSGCore = exports['rsg-core']:GetCoreObject()
 lib.locale()
 
 local showUI = false
+local removeFlies -- forward declaration (defined in flies section)
 local editMode = false
 local temperature = '0'
-local temp = 0
+local temp = 0   -- display value (in Config.TempFormat units)
+local tempC = 0  -- internal value in celsius (used for damage checks)
 local outlawstatus = 0
 
 local NATIVE_SET_HUD_ICON = 0xC116E6DF68DCE667
@@ -24,7 +26,7 @@ end
 ------------------------------------------------
 local localeKeys = {
     'edit_mode_on_title', 'edit_mode_on_desc', 'edit_mode_off_desc', 'reset_hud_title', 'reset_hud_desc',
-    'money_hud_label', 'temp_label', 'health_label', 'stamina_label', 'hunger_label', 'thirst_label',
+    'money_hud_label', 'voice_label', 'outlaw_label', 'temp_label', 'health_label', 'stamina_label', 'hunger_label', 'thirst_label',
     'clean_label', 'stress_label', 'mail_label', 'horse_health_label', 'horse_stamina_label', 'horse_clean_label'
 }
 
@@ -34,7 +36,7 @@ local function sendConfigToNUI()
         locales[key] = locale(key)
     end
     SendNUIMessage({ action = 'setLocales', locales = locales })
-    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceAlwaysVisible = Config.VoiceAlwaysVisible })
+    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceAlwaysVisible = Config.VoiceAlwaysVisible, showPercentages = Config.ShowPercentages })
 end
 
 -- NUI tells us when it has loaded (avoids the old fixed Wait(1000) race)
@@ -82,6 +84,7 @@ end)
 
 RegisterNetEvent('RSGCore:Client:OnPlayerUnload', function()
     showUI = false
+    removeFlies()
 end)
 
 -- resource restarted while already logged in
@@ -105,40 +108,49 @@ local function updateNeed(key, value, reduce)
     end
 end
 
+local function setNeed(key, value, offset)
+    value = tonumber(value)
+    if not value then return end
+    updateNeed(key, value - (offset or 0))
+end
+
 RegisterNetEvent('hud:client:UpdateNeeds', function(newHunger, newThirst, newCleanliness)
-    updateNeed('hunger', newHunger)
-    updateNeed('thirst', newThirst)
-    updateNeed('cleanliness', newCleanliness - getDirt(cache.ped))
+    setNeed('hunger', newHunger)
+    setNeed('thirst', newThirst)
+    setNeed('cleanliness', newCleanliness, getDirt(cache.ped))
 end)
 
-RegisterNetEvent('hud:client:UpdateHunger', function(newHunger)
-    updateNeed('hunger', newHunger)
-end)
-
-RegisterNetEvent('hud:client:UpdateThirst', function(newThirst)
-    updateNeed('thirst', newThirst)
-end)
-
-RegisterNetEvent('hud:client:UpdateStress', function(newStress)
-    updateNeed('stress', newStress)
-end)
-
-RegisterNetEvent('hud:client:UpdateCleanliness', function(newCleanliness)
-    updateNeed('cleanliness', newCleanliness - getDirt(cache.ped))
-end)
+RegisterNetEvent('hud:client:UpdateHunger', function(v) setNeed('hunger', v) end)
+RegisterNetEvent('hud:client:UpdateThirst', function(v) setNeed('thirst', v) end)
+RegisterNetEvent('hud:client:UpdateStress', function(v) setNeed('stress', v) end)
+RegisterNetEvent('hud:client:UpdateCleanliness', function(v) setNeed('cleanliness', v, getDirt(cache.ped)) end)
 
 ------------------------------------------------
 -- stress
 ------------------------------------------------
+local STRESS_NOTIFY_COOLDOWN = 30000
+local lastStressNotify = { gain = 0, relieve = 0 }
+
 local function updateStress(amount, isGain)
+    amount = tonumber(amount)
+    if not amount or amount <= 0 then return end
+
     local playerData = RSGCore.Functions.GetPlayerData()
-    if not playerData or playerData.metadata['isdead'] then return end
-    if not isGain and playerData.job.type == 'leo' then return end
+    if not playerData or not playerData.metadata or playerData.metadata['isdead'] then return end
+    if isGain and playerData.job and playerData.job.type == 'leo' then return end -- law doesn't gain stress
 
-    local newStress = lib.math.clamp((LocalPlayer.state.stress or 0) + (isGain and amount or -amount), 0, 100)
-    LocalPlayer.state:set('stress', lib.math.round(newStress, 2), true)
+    local current = LocalPlayer.state.stress or 0
+    local newStress = lib.math.round(lib.math.clamp(current + (isGain and amount or -amount), 0, 100), 2)
+    if newStress == current then return end
+    LocalPlayer.state:set('stress', newStress, true)
 
-    lib.notify({ title = isGain and locale('sv_lang_1') or locale('sv_lang_3'), type = 'info', duration = 5000 })
+    -- throttle notifications so shooting/speeding doesn't spam the feed
+    local key = isGain and 'gain' or 'relieve'
+    local now = GetGameTimer()
+    if now - lastStressNotify[key] >= STRESS_NOTIFY_COOLDOWN then
+        lastStressNotify[key] = now
+        lib.notify({ title = locale(isGain and 'stress_gain' or 'stress_relief'), type = 'inform', duration = 4000 })
+    end
 end
 
 RegisterNetEvent('hud:client:GainStress', function(amount)
@@ -198,7 +210,8 @@ end)
 CreateThread(function()
     while true do
         local stress = LocalPlayer.state.stress or 0
-        local sleep = getRangeValue(Config.EffectInterval, stress, 'timeout', 60000)
+        local range = getRangeValue(Config.EffectInterval, stress, 'timeout')
+        local sleep = range and math.random(range[1], range[2]) or 10000
 
         if stress >= Config.MinimumStress and not isDead() then
             local intensity = getRangeValue(Config.Intensity['shake'], stress, 'intensity', 0.05)
@@ -233,7 +246,7 @@ local FLIES_DICT = 'scr_mg_cleaning_stalls'
 local FLIES_NAME = 'scr_mg_stalls_manure_flies'
 local fliesHandle = false
 
-local function removeFlies()
+removeFlies = function()
     if fliesHandle then
         if Citizen.InvokeNative(0x9DD5AFF561E88F2A, fliesHandle) then -- DoesParticleFxLoopedExist
             Citizen.InvokeNative(0x459598F579C98929, fliesHandle, false) -- RemoveParticleFx
@@ -320,15 +333,16 @@ CreateThread(function()
     while true do
         Wait(1000)
         if LocalPlayer.state.isLoggedIn then
-            local value = GetTemperatureAtCoords(GetEntityCoords(cache.ped))
-            local unit = '°C'
-            if Config.TempFormat == 'fahrenheit' then
-                value = value * 9 / 5 + 32
-                unit = '°F'
-            end
+            -- everything is calculated in celsius; fahrenheit is display only
+            tempC = GetTemperatureAtCoords(GetEntityCoords(cache.ped)) + (Config.TempFeature and getWarmth(cache.ped) or 0)
 
-            temp = math.floor(value) + (Config.TempFeature and getWarmth(cache.ped) or 0)
-            temperature = temp .. unit
+            if Config.TempFormat == 'fahrenheit' then
+                temp = math.floor(tempC * 9 / 5 + 32)
+                temperature = temp .. '°F'
+            else
+                temp = math.floor(tempC)
+                temperature = temp .. '°C'
+            end
         end
     end
 end)
@@ -362,7 +376,7 @@ local DOWNED_FX = 'MP_Downed'
 
 local function setDamageFx(active)
     local running = Citizen.InvokeNative(0x4A123E85D7C4CA0B, DOWNED_FX) -- AnimpostfxIsRunning
-    if active and Config.DoHealthDamageFx then
+    if active and Config.DoHealthDamageFx and not running then
         Citizen.InvokeNative(0x4102732DF6B4005F, DOWNED_FX, 0, true) -- AnimpostfxPlay
     elseif not active and running then
         Citizen.InvokeNative(0xB4FD7446BAB2F394, DOWNED_FX) -- AnimpostfxStop
@@ -393,10 +407,10 @@ CreateThread(function()
                     hurt = true
                     -- hunger/thirst damage is random
                     SetEntityHealth(ped, math.max(0, GetEntityHealth(ped) - math.random(5, 10)))
-                    PlayPain(ped, 9, 1, true, true)
+                    if Config.DoHealthPainSound then PlayPain(ped, 9, 1, true, true) end
                 end
 
-                local extreme = Config.TempFeature and (temp < Config.MinTemp or temp > Config.MaxTemp)
+                local extreme = Config.TempFeature and (tempC < Config.MinTemp or tempC > Config.MaxTemp)
                 local dirty = (state.cleanliness or 100) <= 0
 
                 if extreme or dirty then
@@ -464,14 +478,13 @@ CreateThread(function()
                 end
             end
 
-            local proximity = LocalPlayer.state['proximity']
+            local maxHealth = GetEntityMaxHealth(ped)
 
             payload = {
                 action = 'hudtick',
                 show = true,
-                health = round(GetEntityHealth(ped) / 6), -- RDR2 max health is 600
+                health = maxHealth > 0 and round(GetEntityHealth(ped) / maxHealth * 100) or 0,
                 stamina = round(Citizen.InvokeNative(0x0FF421E467373FCF, cache.playerId, Citizen.ResultAsFloat())),
-                armor = Citizen.InvokeNative(0x2CE311A7, ped),
                 thirst = LocalPlayer.state.thirst or 100,
                 hunger = LocalPlayer.state.hunger or 100,
                 cleanliness = LocalPlayer.state.cleanliness or 100,
@@ -482,7 +495,6 @@ CreateThread(function()
                 horsehealth = horsehealth,
                 horsestamina = horsestamina,
                 horseclean = horseclean,
-                voice = proximity and proximity.distance or 0,
                 youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,
                 outlawstatus = outlawstatus,
             }
@@ -500,6 +512,8 @@ end)
 ------------------------------------------------
 -- minimap
 ------------------------------------------------
+local lastInterior = nil
+
 CreateThread(function()
     while true do
         Wait(500)
@@ -512,10 +526,10 @@ CreateThread(function()
         elseif showUI then
             if Config.OnFootMinimap then
                 mapType = 1
-                if GetInteriorFromEntity(cache.ped) ~= 0 then
-                    SetRadarConfigType(0xDF5DB58C, 0) -- zoom in inside interiors
-                else
-                    SetRadarConfigType(0x25B517BF, 0) -- normal zoom
+                local inside = GetInteriorFromEntity(cache.ped) ~= 0
+                if inside ~= lastInterior then
+                    lastInterior = inside
+                    SetRadarConfigType(inside and 0xDF5DB58C or 0x25B517BF, 0) -- zoom in inside interiors
                 end
             elseif Config.OnFootCompass then
                 mapType = 3
@@ -533,7 +547,7 @@ local accountTypes = { cash = true, bloodmoney = true, bank = true }
 
 RegisterNetEvent('hud:client:ShowAccounts', function(type, amount)
     if not accountTypes[type] or not amount then return end
-    SendNUIMessage({ action = 'show', type = type, [type] = string.format('%.2f', amount) })
+    SendNUIMessage({ action = 'show', type = type, [type] = lib.math.round(tonumber(amount) or 0, 2) })
 end)
 
 RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
@@ -563,7 +577,7 @@ local function setEditMode(enabled)
     lib.notify({
         title = locale('edit_mode_on_title'),
         description = locale(enabled and 'edit_mode_on_desc' or 'edit_mode_off_desc'),
-        type = enabled and 'success' or 'info',
+        type = enabled and 'success' or 'inform',
         duration = enabled and 5000 or 3000
     })
 end
@@ -574,6 +588,10 @@ end)
 
 RegisterCommand('edithud', function()
     setEditMode(not editMode)
+end, false)
+
+RegisterCommand('togglehudpct', function()
+    SendNUIMessage({ action = 'togglePercentages' })
 end, false)
 
 RegisterCommand('resethud', function()
@@ -591,6 +609,48 @@ RegisterNUICallback('disableEditMode', function(_, cb)
     if editMode then setEditMode(false) end
     cb('ok')
 end)
+
+------------------------------------------------
+-- exports (for external scripts)
+------------------------------------------------
+local NEEDS = { hunger = true, thirst = true, cleanliness = true, stress = true }
+
+exports('GetNeeds', function()
+    local s = LocalPlayer.state
+    return { hunger = s.hunger or 100, thirst = s.thirst or 100, cleanliness = s.cleanliness or 100, stress = s.stress or 0 }
+end)
+
+exports('GetNeed', function(key)
+    if not NEEDS[key] then return nil end
+    return LocalPlayer.state[key] or (key == 'stress' and 0 or 100)
+end)
+
+-- set a need to an absolute value (0-100)
+exports('SetNeed', function(key, value)
+    value = tonumber(value)
+    if not NEEDS[key] or not value then return false end
+    updateNeed(key, value)
+    return true
+end)
+
+-- add (positive) or remove (negative) from a need
+exports('AddNeed', function(key, amount)
+    amount = tonumber(amount)
+    if not NEEDS[key] or not amount then return false end
+    updateNeed(key, (LocalPlayer.state[key] or 0) + amount)
+    return true
+end)
+
+exports('GainStress', function(amount) updateStress(amount, true) end)
+exports('RelieveStress', function(amount) updateStress(amount, false) end)
+
+exports('SetHudVisible', function(visible) showUI = visible and true or false end)
+exports('IsHudVisible', function() return showUI end)
+exports('ToggleEditMode', function(enabled)
+    if enabled == nil then enabled = not editMode end
+    setEditMode(enabled and true or false)
+end)
+exports('IsEditMode', function() return editMode end)
 
 ------------------------------------------------
 -- cleanup

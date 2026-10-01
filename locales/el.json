@@ -1,7 +1,6 @@
 {
-    "sv_lang_1": "Αρχίζεις να αγχώνεσαι",
-    "sv_lang_2": "Διψάς λίγο",
-    "sv_lang_3": "Αισθάνεσαι ανακουφισμένος από το άγχος",
+    "stress_gain": "Αρχίζεις να αγχώνεσαι",
+    "stress_relief": "Αισθάνεσαι ανακουφισμένος από το άγχος",
     "edit_mode_on_title": "Λειτουργία Επεξεργασίας HUD",
     "edit_mode_on_desc": "ΕΝΕΡΓΟ - Κάντε κλικ και σύρετε τα στοιχεία του HUD για να τα τοποθετήσετε",
     "edit_mode_off_desc": "ΑΝΕΝΕΡΓΟ",
@@ -18,5 +17,9 @@
     "mail_label": "✉️ Αλληλογραφία",
     "horse_health_label": "🐎❤️ Υγεία Αλόγου",
     "horse_stamina_label": "🐎⚡ Αντοχή Αλόγου",
-    "horse_clean_label": "🐎🛁 Καθαριότητα Αλόγου"
+    "horse_clean_label": "🐎🛁 Καθαριότητα Αλόγου",
+    "voice_label": "🎙️ Voice",
+    "outlaw_label": "🎭 Outlaw",
+    "cmd_cash_help": "Check Cash Balance",
+    "cmd_bloodmoney_help": "Check Bloodmoney Balance"
 }

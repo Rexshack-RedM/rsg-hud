@@ -1,837 +1,373 @@
-// MONEY HUD
+const RESOURCE = typeof GetParentResourceName === 'function' ? GetParentResourceName() : 'rsg-hud';
+const nuiPost = (name, data = {}) => fetch(`https://${RESOURCE}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify(data)
+}).catch(() => {});
 
-const moneyHud = Vue.createApp({
+const safeStorage = {
+    get(key) {
+        try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; }
+    },
+    set(key, value) {
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
+    }
+};
+
+// ============ MONEY HUD ============
+// Configure your currency / locale here
+const moneyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+});
+const MONEY_FLAGS = { cash: 'showCash', bloodmoney: 'showBloodmoney', bank: 'showBank' };
+
+Vue.createApp({
     data() {
         return {
-            cash: 0,
-            bloodmoney: 0,
-            bank: 0,
-            amount: 0,
-            plus: false,
+            cash: 0, bloodmoney: 0, bank: 0, amount: 0,
             minus: false,
-            showCash: false,
-            showBloodmoney: false,
-            showBank: false,
-            showUpdate: false,
+            showCash: false, showBloodmoney: false, showBank: false, showUpdate: false,
             editMode: false,
             locales: {}
-        }
+        };
     },
-    created() {
-        this.timers = {};
-    },
-    unmounted() {
-        window.removeEventListener('message', this.listener);
-    },
+    created() { this.timers = {}; },
     mounted() {
-        this.listener = (event) => {
-            switch (event.data.action) {
-                case 'update':
-                    this.update(event.data)
-                    break;
-                case 'show':
-                    this.showAccounts(event.data)
-                    break;
-                case 'toggleEditMode':
-                    this.editMode = event.data.enabled
-                    break;
-                case 'setLocales':
-                    this.locales = event.data.locales
-                    break;
+        this.listener = ({ data }) => {
+            switch (data.action) {
+                case 'update': this.update(data); break;
+                case 'show': this.showAccounts(data); break;
+                case 'toggleEditMode': this.editMode = data.enabled; break;
+                case 'setLocales': this.locales = data.locales; break;
             }
         };
         window.addEventListener('message', this.listener);
     },
+    unmounted() { window.removeEventListener('message', this.listener); },
     methods: {
-        // CONFIGURE YOUR CURRENCY HERE
-        // https://www.w3schools.com/tags/ref_language_codes.asp LANGUAGE CODES
-        // https://www.w3schools.com/tags/ref_country_codes.asp COUNTRY CODES
-        formatMoney(value) {
-            const formatter = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0
-            });
-            return formatter.format(value);
-        },
-        // show one account row for `ms`, restarting its timer if already visible
+        formatMoney(value) { return moneyFormatter.format(Number(value) || 0); },
         flash(type, ms, updateMs) {
-            const flag = { cash: 'showCash', bloodmoney: 'showBloodmoney', bank: 'showBank' }[type];
+            const flag = MONEY_FLAGS[type];
             if (!flag) return;
             this[flag] = true;
             clearTimeout(this.timers[flag]);
-            this.timers[flag] = setTimeout(() => this[flag] = false, ms);
+            this.timers[flag] = setTimeout(() => { this[flag] = false; }, ms);
             if (updateMs) {
                 clearTimeout(this.timers.update);
-                this.timers.update = setTimeout(() => this.showUpdate = false, updateMs);
+                this.timers.update = setTimeout(() => { this.showUpdate = false; }, updateMs);
             }
         },
         update(data) {
-            this.showUpdate = true;
-            this.amount = data.amount;
-            this.bank = data.bank;
-            this.bloodmoney = data.bloodmoney;
             this.cash = data.cash;
+            this.bloodmoney = data.bloodmoney;
+            this.bank = data.bank;
+            this.amount = data.amount;
             this.minus = !!data.minus;
-            this.plus = !data.minus;
+            this.showUpdate = true;
             this.flash(data.type, 2000, 1000);
         },
         showAccounts(data) {
-            const flag = { cash: 'showCash', bloodmoney: 'showBloodmoney', bank: 'showBank' }[data.type];
-            if (flag && !this[flag]) {
-                this[data.type] = data[data.type];
-                this.flash(data.type, 3500);
-            }
+            if (!MONEY_FLAGS[data.type]) return;
+            this[data.type] = data[data.type];
+            this.flash(data.type, 3500);
         }
     }
-}).mount('#money-container')
+}).mount('#money-container');
 
-// PLAYER HUD
+// ============ PLAYER HUD ============
+const LOW = 30;
+const DEFAULT_COLORS = { normal: '#FFFFFF', low: '#e0554f', active: '#e0554f' };
 
-const playerHud = {
+Vue.createApp({
     data() {
         return {
-            health: 0,
-            stamina: 0,
-            armor: 0,
-            hunger: 0,
-            thirst: 0,
-            cleanliness: 0,
-            stress: 0,
-            voice: 0,
-            temp: 0,
-            horsehealth: 0,
-            horsestamina: 0,
-            horseclean: 0,
-            youhavemail: false,
-            outlawstatus: true,
             show: false,
-            talking: false,
-            showVoice: true,
-            showHealth: true,
-            showStamina: true,
-            showArmor: true,
-            showHunger: true,
-            showThirst: true,
-            showCleanliness: true,
-            showStress: true,
-            showHorseStamina: false,
-            showHorseHealth: false,
-            showHorseClean: false,
-            showHorseStaminaColor: "#f2f2f2",
-            showHorseHealthColor: "#f2f2f2",
-            showHorseCleanColor: "#f2f2f2",
-            showYouHaveMail: true,
-            talkingColor: "#FFFFFF",
-            showTemp: true,
             editMode: false,
             voiceAlwaysVisible: true,
-            showHealthColor: "#FFFFFF",
-            showStaminaColor: "#FFFFFF",
-            showHungerColor: "#FFFFFF",
-            showThirstColor: "#FFFFFF",
-            showCleanlinessColor: "#FFFFFF",
-            showTempColor: "#f2f2f2",
-            showYouHaveMailColor: "#FFFFFF",
-            showOutLawColor: "#6fbf73",
-            showoutlawstatus: false,
-            iconColors: {}, // Store config colors
-            savedVisibility: null, // Store visibility states for edit mode
-            locales: {} // Store locale translations
-        }
-    },
-    unmounted() {
-        window.removeEventListener('message', this.listener);
+            showPct: true,
+            iconColors: {},
+            locales: {},
+            health: 0, stamina: 0, hunger: 0, thirst: 0, cleanliness: 0, stress: 0,
+            temp: '0°C',
+            onHorse: false, horsehealth: 0, horsestamina: 0, horseclean: 0,
+            talking: false, youhavemail: false, outlawstatus: 0
+        };
     },
     mounted() {
-        this.listener = (event) => {
-            if (event.data.action === 'hudtick') {
-                this.hudTick(event.data);
-            } else if (event.data.action === 'toggleEditMode') {
-                this.toggleEditMode(event.data.enabled);
-            } else if (event.data.action === 'setLocales') {
-                this.locales = event.data.locales;
-            } else if (event.data.action === 'setConfig') {
-                this.iconColors = event.data.iconColors || {};
-                this.voiceAlwaysVisible = event.data.voiceAlwaysVisible;
+        this.listener = ({ data }) => {
+            switch (data.action) {
+                case 'hudtick': this.hudTick(data); break;
+                case 'toggleEditMode': this.editMode = data.enabled; break;
+                case 'setLocales': this.locales = data.locales; break;
+                case 'setConfig':
+                    this.iconColors = data.iconColors || {};
+                    this.voiceAlwaysVisible = data.voiceAlwaysVisible !== false;
+                    {
+                        // player's saved choice wins over the server default
+                        let saved = safeStorage.get('rsghud_showpct');
+                        if (typeof saved.value !== 'boolean') saved = safeStorage.get('rexhud_showpct'); // migrate old key
+                        this.showPct = typeof saved.value === 'boolean' ? saved.value : data.showPercentages !== false;
+                    }
+                    break;
+                case 'togglePercentages':
+                    this.showPct = !this.showPct;
+                    safeStorage.set('rsghud_showpct', { value: this.showPct });
+                    break;
             }
         };
         window.addEventListener('message', this.listener);
     },
+    unmounted() { window.removeEventListener('message', this.listener); },
     computed: {
-        healthClass() { return this.barClass(this.health); },
-        staminaClass() { return this.barClass(this.stamina); },
-        hungerClass() { return this.barClass(this.hunger); },
-        thirstClass() { return this.barClass(this.thirst); },
-        cleanlinessClass() { return this.barClass(this.cleanliness); },
-        stressClass() { return this.barClassInvert(this.stress); },
+        // visibility: elements hide when "full"/irrelevant, edit mode forces everything on
+        vis() {
+            const e = this.editMode;
+            return {
+                health: e || this.health < 100,
+                stamina: e || this.stamina < 100,
+                hunger: e || this.hunger < 100,
+                thirst: e || this.thirst < 100,
+                cleanliness: e || this.cleanliness < 100,
+                stress: e || this.stress > 0,
+                temp: true,
+                horse: e || this.onHorse,
+                voice: e || this.voiceAlwaysVisible || this.talking,
+                mail: e || this.youhavemail,
+                outlaw: e || this.isOutlaw
+            };
+        },
+        isOutlaw() { return this.outlawstatus >= 100; },
+        tempValue() { return parseFloat(this.temp) || 0; },
+        isFahrenheit() { return String(this.temp).includes('F'); },
+        tempCelsius() { return this.isFahrenheit ? (this.tempValue - 32) * 5 / 9 : this.tempValue; },
         tempClass() {
-            const t = parseFloat(this.temp) || 0;
-            if (t <= 0) return 'stat-bad';
-            if (t <= 10) return 'stat-warn';
+            const c = this.tempCelsius;
+            if (c <= 0 || c >= 40) return 'stat-bad';
+            if (c <= 10 || c >= 30) return 'stat-warn';
             return 'stat-good';
         },
-        tempPct() {
-            const t = parseFloat(this.temp) || 0;
-            return Math.max(0, Math.min(100, Math.round((t + 10) / 50 * 100)));
-        },
-        horseHealthClass() { return this.barClass(this.horsehealth); },
-        horseStaminaClass() { return this.barClass(this.horsestamina); },
-        horseCleanClass() { return this.barClass(this.horseclean); }
+        tempPct() { return this.clampPct((this.tempCelsius + 10) / 50 * 100); },
+        tempColor() {
+            const c = this.iconColors.temp || {};
+            return this.tempCelsius <= 10 ? (c.cold || '#d9a441') : (c.normal || '#f2f2f2');
+        }
     },
     methods: {
-        clampPct(v) {
-            const n = parseFloat(v) || 0;
-            return Math.max(0, Math.min(100, Math.round(n)));
-        },
+        clampPct(v) { return Math.max(0, Math.min(100, Math.round(parseFloat(v) || 0))); },
         barClass(v) {
             const n = parseFloat(v) || 0;
-            if (n <= 30) return 'stat-bad';
-            if (n <= 70) return 'stat-warn';
-            return 'stat-good';
+            return n <= LOW ? 'stat-bad' : n <= 70 ? 'stat-warn' : 'stat-good';
         },
         barClassInvert(v) {
             const n = parseFloat(v) || 0;
-            if (n >= 70) return 'stat-bad';
-            if (n >= 40) return 'stat-warn';
-            return 'stat-good';
+            return n >= 70 ? 'stat-bad' : n >= 40 ? 'stat-warn' : 'stat-good';
+        },
+        // icon colour from Config.IconColors; `alert` picks the low/active variant
+        iconColor(key, alert) {
+            const c = this.iconColors[key] || {};
+            return alert ? (c.low || c.active || c.hasmail || DEFAULT_COLORS.low) : (c.normal || DEFAULT_COLORS.normal);
         },
         hudTick(data) {
             this.show = data.show;
             if (!data.show) return; // hidden ticks carry no stats
             this.health = data.health;
-            this.stamina = parseInt(data.stamina);
-            this.armor = data.armor;
+            this.stamina = parseInt(data.stamina) || 0;
             this.hunger = data.hunger;
             this.thirst = data.thirst;
             this.cleanliness = data.cleanliness;
             this.stress = data.stress;
-            this.voice = data.voice;
             this.temp = data.temp;
-            this.youhavemail = data.youhavemail;
-            this.outlawstatus = data.outlawstatus;
             this.talking = data.talking;
-            
-            // Don't modify horse visibility if in edit mode
-            if (!this.editMode) {
-                this.showHorseStamina = data.onHorse;
-                this.showHorseHealth = data.onHorse;
-                this.showHorseClean = data.onHorse;
-            }
-            
+            this.youhavemail = data.youhavemail;
+            this.outlawstatus = Number(data.outlawstatus) || 0;
+            this.onHorse = data.onHorse;
             if (data.onHorse) {
                 this.horsehealth = data.horsehealth;
                 this.horsestamina = data.horsestamina;
                 this.horseclean = data.horseclean;
-                
-                // Set horse colors based on config
-                this.showHorseHealthColor = (data.horsehealth <= 30) ?
-                    (this.iconColors.horse_health?.low || "#e0554f") :
-                    (this.iconColors.horse_health?.normal || "#f2f2f2");
-                    
-                this.showHorseStaminaColor = (data.horsestamina <= 30) ?
-                    (this.iconColors.horse_stamina?.low || "#e0554f") :
-                    (this.iconColors.horse_stamina?.normal || "#f2f2f2");
-                    
-                this.showHorseCleanColor = (data.horseclean <= 30) ?
-                    (this.iconColors.horse_clean?.low || "#e0554f") :
-                    (this.iconColors.horse_clean?.normal || "#f2f2f2");
-            }
-            
-            // Don't modify visibility if in edit mode
-            if (!this.editMode) {
-                if (data.health >= 100) {
-                    this.showHealth = false;
-                } else {
-                    this.showHealth = true;
-                }
-            }
-            
-            if (data.health <= 30) {
-                this.showHealthColor = this.iconColors.health?.low || "#e0554f";
-            } else {
-                this.showHealthColor = this.iconColors.health?.normal || "#FFFFFF";
-            }
-            
-            // Don't modify visibility if in edit mode
-            if (!this.editMode) {
-                if (parseInt(data.stamina) >= 100) {
-                    this.showStamina = false;
-                } else {
-                    this.showStamina = true;
-                }
-            }
-            
-            if (parseInt(data.stamina) <= 30) {
-                this.showStaminaColor = this.iconColors.stamina?.low || "#e0554f";
-            } else {
-                this.showStaminaColor = this.iconColors.stamina?.normal || "#FFFFFF";
-            }
-            if (data.hunger <= 30) {
-                this.showHungerColor = this.iconColors.hunger?.low || "#e0554f";
-            } else {
-                this.showHungerColor = this.iconColors.hunger?.normal || "#FFFFFF";
-            }
-            
-            if (data.thirst <= 30) {
-                this.showThirstColor = this.iconColors.thirst?.low || "#e0554f";
-            } else {
-                this.showThirstColor = this.iconColors.thirst?.normal || "#FFFFFF";
-            }
-            
-            if (data.cleanliness <= 30) {
-                this.showCleanlinessColor = this.iconColors.cleanliness?.low || "#e0554f";
-            } else {
-                this.showCleanlinessColor = this.iconColors.cleanliness?.normal || "#FFFFFF";
-            }
-            
-            // Don't modify visibility if in edit mode
-            if (!this.editMode) {
-                if (data.armor <= 0) {
-                    this.showArmor = false;
-                } else {
-                    this.showArmor = true;
-                }
-                
-                if (data.hunger >= 100) {
-                    this.showHunger = false;
-                } else {
-                    this.showHunger = true;
-                }
-                
-                if (data.thirst >= 100) {
-                    this.showThirst = false;
-                } else {
-                    this.showThirst = true;
-                }
-                
-                if (data.cleanliness >= 100) {
-                    this.showCleanliness = false;
-                } else {
-                    this.showCleanliness = true;
-                }
-                
-                if (data.stress <= 0) {
-                    this.showStress = false;
-                } else {
-                    this.showStress = true;
-                }
-                
-                if (data.youhavemail) {
-                    this.showYouHaveMail = true;
-                } else {
-                    this.showYouHaveMail = false;
-                }
-            }
-            
-            // Voice visibility - configurable
-            if (this.voiceAlwaysVisible) {
-                this.showVoice = true;  // Always visible if config enabled
-            } else {
-                // Only visible when talking if config disabled
-                if (data.talking) {
-                    this.showVoice = true;
-                } else {
-                    this.showVoice = false;
-                }
-            }
-            if (data.talking) {
-                this.talkingColor = this.iconColors.voice?.active || "#e0554f";
-            } else {
-                this.talkingColor = this.iconColors.voice?.normal || "#FFFFFF";
-            }
-            // data.temp is a string like "12°C", so parse it before comparing
-            if ((parseFloat(data.temp) || 0) <= 30) {
-                this.showTempColor = this.iconColors.temp?.cold || "#d9a441";
-            } else {
-                this.showTempColor = this.iconColors.temp?.normal || "#f2f2f2";
-            }
-            if (data.youhavemail) {
-                this.showYouHaveMailColor = this.iconColors.mail?.hasmail || "#ffffff";
-            } else {
-                this.showYouHaveMailColor = this.iconColors.mail?.normal || "#FFFFFF";
-            }
-            
-            // Don't modify outlaw visibility if in edit mode
-            if (!this.editMode) {
-                if (data.outlawstatus >= 100) {
-                    this.showoutlawstatus = true;
-                } else {
-                    this.showoutlawstatus = false;
-                }
-            }
-            
-            if (data.outlawstatus) {
-                this.showOutLawColor = this.iconColors.outlaw?.active || "#e0554f";
-            } else {
-                this.showOutLawColor = this.iconColors.outlaw?.normal || "#6fbf73";
-            }
-        },
-        
-        // Toggle edit mode and manage element visibility
-        toggleEditMode(enabled) {
-            this.editMode = enabled;
-            
-            // When entering edit mode, show all elements temporarily
-            if (enabled) {
-                // Store current visibility states BEFORE forcing them to true
-                this.savedVisibility = {
-                    showHealth: this.showHealth,
-                    showStamina: this.showStamina,
-                    showHunger: this.showHunger,
-                    showThirst: this.showThirst,
-                    showCleanliness: this.showCleanliness,
-                    showStress: this.showStress,
-                    showYouHaveMail: this.showYouHaveMail,
-                    showHorseHealth: this.showHorseHealth,
-                    showHorseStamina: this.showHorseStamina,
-                    showHorseClean: this.showHorseClean,
-                    showTemp: this.showTemp,
-                    showoutlawstatus: this.showoutlawstatus
-                };
-                
-                // Force show all elements in edit mode
-                this.showHealth = true;
-                this.showStamina = true;
-                this.showHunger = true;
-                this.showThirst = true;
-                this.showCleanliness = true;
-                this.showStress = true;
-                this.showYouHaveMail = true;
-                this.showHorseHealth = true;
-                this.showHorseStamina = true;
-                this.showHorseClean = true;
-                this.showTemp = true;
-                this.showoutlawstatus = true;
-            } else {
-                // Restore original visibility states when exiting edit mode
-                if (this.savedVisibility) {
-                    this.showHealth = this.savedVisibility.showHealth;
-                    this.showStamina = this.savedVisibility.showStamina;
-                    this.showHunger = this.savedVisibility.showHunger;
-                    this.showThirst = this.savedVisibility.showThirst;
-                    this.showCleanliness = this.savedVisibility.showCleanliness;
-                    this.showStress = this.savedVisibility.showStress;
-                    this.showYouHaveMail = this.savedVisibility.showYouHaveMail;
-                    this.showHorseHealth = this.savedVisibility.showHorseHealth;
-                    this.showHorseStamina = this.savedVisibility.showHorseStamina;
-                    this.showHorseClean = this.savedVisibility.showHorseClean;
-                    this.showTemp = this.savedVisibility.showTemp;
-                    this.showoutlawstatus = this.savedVisibility.showoutlawstatus;
-                    this.savedVisibility = null;
-                }
             }
         }
     }
-}
-const app = Vue.createApp(playerHud);
-app.mount('#ui-container');
+}).mount('#ui-container');
 
-
-// HUD DRAGGING SYSTEM
+// ============ HUD DRAG / RESIZE (edit mode) ============
 class HUDDragSystem {
     constructor() {
-        this.isDragging = false;
-        this.isResizing = false;
-        this.currentElement = null;
-        this.dragOffset = { x: 0, y: 0 };
+        this.mode = null;          // 'drag' | 'resize' | null
+        this.el = null;
         this.editMode = false;
-        this.positions = this.loadPositions();
-        this.sizes = this.loadSizes();
-        
-        this.init();
-    }
-    
-    init() {
-        // Load saved positions
-        this.applyPositions();
-        
-        // Set up event listeners
-        document.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        // Add mouseleave to handle cases where mouse leaves window while dragging
-        document.addEventListener('mouseleave', this.handleMouseUp.bind(this));
-        // Add window blur event to stop dragging when window loses focus
-        window.addEventListener('blur', this.handleMouseUp.bind(this));
-        // Add ESC key to cancel dragging
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
-        
-        // Listen for edit mode changes and reset commands
-        window.addEventListener('message', (event) => {
-            if (event.data.action === 'toggleEditMode') {
-                this.toggleEditMode(event.data.enabled);
-            } else if (event.data.action === 'resetPositions') {
-                this.resetToDefaults();
-            }
+        this.dragOffset = { x: 0, y: 0 };
+        this.positions = safeStorage.get('hudPositions');
+        this.sizes = safeStorage.get('hudSizes');
+
+        this.applySaved();
+
+        document.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        const stop = () => this.stop();
+        document.addEventListener('mouseup', stop);
+        document.addEventListener('mouseleave', stop);
+        window.addEventListener('blur', stop);
+        window.addEventListener('resize', () => this.applySaved());
+        document.addEventListener('keydown', (e) => this.onKeyDown(e));
+
+        window.addEventListener('message', ({ data }) => {
+            if (data.action === 'toggleEditMode') this.toggleEditMode(data.enabled);
+            else if (data.action === 'resetPositions') this.resetToDefaults();
         });
     }
-    
-    loadPositions() {
-        const saved = localStorage.getItem('hudPositions');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.warn('Failed to parse saved HUD positions:', e);
-            }
+
+    find(name) { return document.querySelector(`[data-element="${name}"]`); }
+
+    // money container is absolutely positioned, bars/badges are fixed
+    pin(el, x, y) {
+        el.style.position = el.id === 'money-container' ? 'absolute' : 'fixed';
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+    }
+
+    applySaved() {
+        for (const [name, size] of Object.entries(this.sizes)) {
+            const el = this.find(name);
+            if (el && size) this.applySize(el, size);
         }
-        return {};
-    }
-    
-    savePositions() {
-        localStorage.setItem('hudPositions', JSON.stringify(this.positions));
-    }
-    
-    loadSizes() {
-        const saved = localStorage.getItem('hudSizes');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.warn('Failed to parse saved HUD sizes:', e);
-            }
+        for (const [name, pos] of Object.entries(this.positions)) {
+            const el = this.find(name);
+            if (!el || !pos) continue;
+            // keep saved elements on-screen if the resolution changed
+            const w = el.offsetWidth || 40, h = el.offsetHeight || 40;
+            const x = Math.max(0, Math.min(pos.x, window.innerWidth - w));
+            const y = Math.max(0, Math.min(pos.y, window.innerHeight - h));
+            this.pin(el, x, y);
         }
-        return {};
     }
-    
-    saveSizes() {
-        localStorage.setItem('hudSizes', JSON.stringify(this.sizes));
-    }
-    
-    applyPositions() {
-        Object.keys(this.positions).forEach(elementName => {
-            const element = document.querySelector(`[data-element="${elementName}"]`);
-            if (element && this.positions[elementName]) {
-                const pos = this.positions[elementName];
-                // Money uses absolute positioning, individual rows / badges use fixed
-                if (element.id === 'money-container') {
-                    // For containers like money
-                    element.style.position = 'absolute';
-                    element.style.left = pos.x + 'px';
-                    element.style.top = pos.y + 'px';
-                    element.style.right = 'auto';
-                    element.style.bottom = 'auto';
-                } else {
-                    element.style.position = 'fixed';
-                    element.style.left = pos.x + 'px';
-                    element.style.top = pos.y + 'px';
-                    element.style.right = 'auto';
-                    element.style.bottom = 'auto';
-                }
-            }
-        });
-        
-        // Apply saved sizes
-        Object.keys(this.sizes).forEach(elementName => {
-            const element = document.querySelector(`[data-element="${elementName}"]`);
-            if (element && this.sizes[elementName]) {
-                const size = this.sizes[elementName];
-                this.applySizeToElement(element, size);
-            }
-        });
-    }
-    
+
     toggleEditMode(enabled) {
         this.editMode = enabled;
-        const draggableElements = document.querySelectorAll('.draggable-element');
-        
-        draggableElements.forEach(element => {
-            if (enabled) {
-                element.classList.add('edit-mode');
-            } else {
-                element.classList.remove('edit-mode');
-                element.classList.remove('dragging');
-            }
+        document.querySelectorAll('.draggable-element').forEach(el => {
+            el.classList.toggle('edit-mode', enabled);
+            if (!enabled) el.classList.remove('dragging', 'resizing');
         });
-        
-        // Stop any current dragging/resizing and reset cursor
-        if (!enabled) {
-            this.stopDragging();
-            this.stopResizing();
-            // Force reset cursor and user selection
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            this.isDragging = false;
-            this.isResizing = false;
-            this.currentElement = null;
-        }
+        if (!enabled) this.stop();
     }
-    
-    handleMouseDown(e) {
-        if (!this.editMode) return;
-        
-        // Check if clicked on a resize handle
+
+    onMouseDown(e) {
+        if (!this.editMode || e.button !== 0) return;
         if (e.target.classList.contains('resize-handle')) {
             e.preventDefault();
-            this.startResizing(e.target.parentElement, e);
+            this.startResize(e.target.parentElement, e);
+            return;
         }
-        // Check if clicked on an individual bar/badge or its contents (but not resize handle)
-        else {
-            // Find the nearest draggable element (each stat row / badge drags alone)
-            let dragTarget = e.target.closest('.stat-row, .mini-badge, #money-container');
-            if (dragTarget && !e.target.classList.contains('resize-handle')) {
-                e.preventDefault();
-                this.startDragging(dragTarget, e);
-            }
-        }
-    }
-    
-    startDragging(element, e) {
-        this.isDragging = true;
-        this.currentElement = element;
-        element.classList.add('dragging');
-        
-        const rect = element.getBoundingClientRect();
-        this.dragOffset = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
-        
-        // Pin at viewport coords. Bars/badges use fixed (outside the flex strip).
-        // #ui-container no longer has a transform, so fixed coords are viewport-relative.
-        if (element.id === 'money-container') {
-            element.style.position = 'absolute';
-            element.style.left = rect.left + 'px';
-            element.style.top = rect.top + 'px';
-            element.style.right = 'auto';
-            element.style.bottom = 'auto';
-        } else {
-            element.style.position = 'fixed';
-            element.style.left = rect.left + 'px';
-            element.style.top = rect.top + 'px';
-            element.style.right = 'auto';
-            element.style.bottom = 'auto';
-        }
-        
-        // Disable text selection during drag
-        document.body.style.userSelect = 'none';
-    }
-    
-    handleMouseMove(e) {
-        if (this.isDragging && this.currentElement) {
+        const target = e.target.closest('.stat-row, .mini-badge, #money-container');
+        if (target) {
             e.preventDefault();
-            
-            const newX = e.clientX - this.dragOffset.x;
-            const newY = e.clientY - this.dragOffset.y;
-            
-            // Keep element within viewport bounds
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-            const elementRect = this.currentElement.getBoundingClientRect();
-            
-            const clampedX = Math.max(0, Math.min(newX, viewportWidth - elementRect.width));
-            const clampedY = Math.max(0, Math.min(newY, viewportHeight - elementRect.height));
-            
-            const gridSize = 10;
-            const snappedX = Math.round(clampedX / gridSize) * gridSize;
-            const snappedY = Math.round(clampedY / gridSize) * gridSize;
-            const finalX = Math.max(0, Math.min(snappedX, viewportWidth - elementRect.width));
-            const finalY = Math.max(0, Math.min(snappedY, viewportHeight - elementRect.height));
-            this.currentElement.style.left = finalX + 'px';
-            this.currentElement.style.top = finalY + 'px';
-        }
-        else if (this.isResizing && this.currentElement) {
-            e.preventDefault();
-            this.handleResize(e);
+            this.startDrag(target, e);
         }
     }
-    
-    handleMouseUp(e) {
-        if (this.isDragging) {
-            this.stopDragging();
-        } else if (this.isResizing) {
-            this.stopResizing();
-        }
+
+    startDrag(el, e) {
+        const rect = el.getBoundingClientRect();
+        this.mode = 'drag';
+        this.el = el;
+        this.dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        el.classList.add('dragging');
+        this.pin(el, rect.left, rect.top);
     }
-    
-    handleKeyDown(e) {
-        // ESC key cancels dragging or exits edit mode
-        if (e.key === 'Escape') {
-            if (this.isDragging) {
-                this.stopDragging();
-            } else if (this.editMode) {
-                // Exit edit mode via NUI callback
-                fetch(`https://${GetParentResourceName()}/disableEditMode`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json; charset=UTF-8',
-                    },
-                    body: JSON.stringify({})
-                });
-            }
-        }
-    }
-    
-    startResizing(element, e) {
-        this.isResizing = true;
-        this.currentElement = element;
-        element.classList.add('resizing');
-        
-        this.initialMouseX = e.clientX;
-        this.initialMouseY = e.clientY;
-        
-        const rect = element.getBoundingClientRect();
-        this.initialWidth = rect.width;
-        this.initialHeight = rect.height;
-        
-        document.body.style.userSelect = 'none';
+
+    startResize(el, e) {
+        this.mode = 'resize';
+        this.el = el;
+        this.startMouse = { x: e.clientX, y: e.clientY };
+        this.startWidth = el.getBoundingClientRect().width;
+        el.classList.add('resizing');
         document.body.style.cursor = 'nw-resize';
     }
-    
-    handleResize(e) {
-        if (!this.currentElement) return;
-        
-        const deltaX = e.clientX - this.initialMouseX;
-        const deltaY = e.clientY - this.initialMouseY;
-        
-        // Calculate new size (use the larger delta for uniform scaling)
-        const delta = Math.max(deltaX, deltaY);
-        const newSize = Math.max(30, this.initialWidth + delta); // Minimum size of 30px
-        const maxSize = Math.min(window.innerWidth, window.innerHeight) * 0.3; // Max 30% of viewport
-        const clampedSize = Math.min(newSize, maxSize);
-        
-        this.applySizeToElement(this.currentElement, clampedSize);
-    }
-    
-    applySizeToElement(element, size) {
-        const isCircle = element.classList.contains('stat-circle');
-        if (isCircle) {
-            // Circles: keep square aspect, scale ring + content together
-            element.style.width = size + 'px';
-            element.style.height = size + 'px';
-            element.style.transform = '';
-            element.style.transformOrigin = '';
-            return;
-        }
-        const isBar = element.classList.contains('stat-row');
-        if (isBar) {
-            // Bars: resize width only — no transform scaling (keeps label/pct layout stable)
-            element.style.width = size + 'px';
-            element.style.transform = '';
-            element.style.transformOrigin = '';
-            return;
-        }
-        // Badges / money: keep circular/square scale behaviour (base ~60px)
-        const baseSize = 60;
-        const scaleFactor = size / baseSize;
-        element.style.transform = `scale(${scaleFactor})`;
-        element.style.transformOrigin = 'center center';
-        element.style.width = size + 'px';
-        element.style.height = size + 'px';
-        if (!element.classList.contains('mini-badge')) {
-            element.style.display = 'inline-block';
-        }
-    }
-    
-    stopResizing() {
-        if (this.currentElement) {
-            this.currentElement.classList.remove('resizing');
-            
-            // Save the new size
-            const elementName = this.currentElement.getAttribute('data-element');
-            if (elementName) {
-                const rect = this.currentElement.getBoundingClientRect();
-                this.sizes[elementName] = rect.width;
-                this.saveSizes();
-            }
-        }
-        
-        // Complete cleanup
-        this.isResizing = false;
-        this.currentElement = null;
-        document.body.style.userSelect = '';
-        document.body.style.cursor = '';
-        document.body.style.webkitUserSelect = '';
-        document.body.style.mozUserSelect = '';
-        document.body.style.msUserSelect = '';
-    }
-    
-    stopDragging() {
-        if (this.currentElement) {
-            this.currentElement.classList.remove('dragging');
-            
-            // Save the new position
-            const elementName = this.currentElement.getAttribute('data-element');
-            if (elementName) {
-                const rect = this.currentElement.getBoundingClientRect();
-                this.positions[elementName] = {
-                    x: parseInt(this.currentElement.style.left),
-                    y: parseInt(this.currentElement.style.top)
-                };
-                this.savePositions();
-            }
-        }
-        
-        // Complete cleanup
-        this.isDragging = false;
-        this.currentElement = null;
-        document.body.style.userSelect = '';
-        document.body.style.cursor = '';
-        document.body.style.webkitUserSelect = '';
-        document.body.style.mozUserSelect = '';
-        document.body.style.msUserSelect = '';
-    }
-    
-    resetToDefaults() {
-        // Reset money container to original position (top-right)
-        const moneyContainer = document.getElementById('money-container');
-        if (moneyContainer) {
-            moneyContainer.style.position = 'absolute';
-            moneyContainer.style.right = '2vw';
-            moneyContainer.style.top = '5vh';
-            moneyContainer.style.left = 'auto';
-            moneyContainer.style.bottom = 'auto';
-            moneyContainer.style.width = '';
-            moneyContainer.style.height = '';
-        }
-        
-        // Reset ui-container to bottom-center horizontal strip (first-load layout) — no transform (avoids fixed-position offset bug)
-        const uiContainer = document.getElementById('ui-container');
-        if (uiContainer) {
-            uiContainer.style.position = 'fixed';
-            uiContainer.style.left = '0';
-            uiContainer.style.right = '0';
-            uiContainer.style.bottom = '1.5vh';
-            uiContainer.style.top = 'auto';
-            uiContainer.style.transform = '';
-            uiContainer.style.display = 'flex';
-            uiContainer.style.flexDirection = 'column';
-            uiContainer.style.gap = '8px';
-            uiContainer.style.alignItems = 'center';
-        }
 
-        // Reset all individual stat row / badge elements to their default strip positioning
-        const statElements = document.querySelectorAll('.stat-row, .mini-badge');
-        statElements.forEach(el => {
-            // Clear position overrides
-            el.style.position = '';
-            el.style.left = '';
-            el.style.top = '';
-            el.style.right = '';
-            el.style.bottom = '';
-            el.style.width = '';
-            el.style.height = '';
-            el.style.transform = ''; // Clear transform scaling
-            el.style.transformOrigin = '';
-            // Remove any drag/resize classes
-            el.classList.remove('edit-mode', 'dragging', 'resizing');
+    onMouseMove(e) {
+        if (!this.el) return;
+        e.preventDefault();
+        if (this.mode === 'drag') {
+            const rect = this.el.getBoundingClientRect();
+            const grid = 10;
+            const maxX = window.innerWidth - rect.width;
+            const maxY = window.innerHeight - rect.height;
+            const x = Math.max(0, Math.min(Math.round((e.clientX - this.dragOffset.x) / grid) * grid, maxX));
+            const y = Math.max(0, Math.min(Math.round((e.clientY - this.dragOffset.y) / grid) * grid, maxY));
+            this.el.style.left = x + 'px';
+            this.el.style.top = y + 'px';
+        } else if (this.mode === 'resize') {
+            const delta = Math.max(e.clientX - this.startMouse.x, e.clientY - this.startMouse.y);
+            const max = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+            this.applySize(this.el, Math.min(Math.max(30, this.startWidth + delta), max));
+        }
+    }
+
+    onKeyDown(e) {
+        if (e.key !== 'Escape') return;
+        if (this.mode) this.stop();
+        else if (this.editMode) nuiPost('disableEditMode');
+    }
+
+    applySize(el, size) {
+        el.style.width = size + 'px';
+        if (el.classList.contains('stat-circle')) {
+            el.style.height = size + 'px';
+            el.style.flex = `0 0 ${size}px`; // CSS flex-basis was pinning the width at 72px
+            el.style.alignSelf = 'center';
+            el.style.setProperty('--circle-size', size + 'px'); // lets icon-only mode scale the glyph
+            el.style.transform = '';
+            return;
+        }
+        if (el.classList.contains('stat-row')) {
+            el.style.transform = '';
+            return;
+        }
+        // badges / money: uniform scale from a ~60px base
+        el.style.height = size + 'px';
+        el.style.transform = `scale(${size / 60})`;
+        el.style.transformOrigin = 'center center';
+        if (!el.classList.contains('mini-badge')) el.style.display = 'inline-block';
+    }
+
+    stop() {
+        const el = this.el;
+        if (el) {
+            const name = el.getAttribute('data-element');
+            if (this.mode === 'drag' && name) {
+                this.positions[name] = { x: parseInt(el.style.left) || 0, y: parseInt(el.style.top) || 0 };
+                safeStorage.set('hudPositions', this.positions);
+            } else if (this.mode === 'resize' && name) {
+                this.sizes[name] = el.getBoundingClientRect().width;
+                safeStorage.set('hudSizes', this.sizes);
+            }
+            el.classList.remove('dragging', 'resizing');
+        }
+        this.mode = null;
+        this.el = null;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    }
+
+    resetToDefaults() {
+        this.stop();
+        document.querySelectorAll('#money-container, .stat-row, .mini-badge').forEach(el => {
+            ['position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'transform', 'transformOrigin', 'display']
+                .forEach(p => { el.style[p] = ''; });
+            el.classList.remove('dragging', 'resizing');
         });
-        
-        // Clear saved positions and sizes
         this.positions = {};
         this.sizes = {};
-        this.savePositions();
-        this.saveSizes();
+        safeStorage.set('hudPositions', this.positions);
+        safeStorage.set('hudSizes', this.sizes);
     }
 }
 
-// Initialize the drag system
-const hudDragSystem = new HUDDragSystem();
+new HUDDragSystem();
 
-// Tell Lua the NUI is ready so it can send locales + colors
-fetch(`https://${GetParentResourceName()}/nuiReady`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify({})
-});
+// Tell Lua the NUI is ready so it can send locales + colours
+nuiPost('nuiReady');
