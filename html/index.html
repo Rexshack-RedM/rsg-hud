@@ -39,11 +39,6 @@
         <div id="ui-container">
             <div id="playerHud" v-show="show || editMode" :class="{ 'no-pct': !showPct }">
                 <div id="mini-badges">
-                    <div class="mini-badge draggable-element" data-element="voice" :style="{ opacity: vis.voice ? 1 : 0, color: iconColor('voice', talking) }" :class="{ talking }">
-                        <div class="drag-handle" v-show="editMode">{{ locales.voice_label || 'Voice' }}</div>
-                        <div class="resize-handle" v-show="editMode"></div>
-                        <i class="fa-solid fa-microphone"></i>
-                    </div>
                     <div class="mini-badge draggable-element" data-element="mail" :class="{ hasmail: youhavemail }" :style="{ color: iconColor('mail', youhavemail) }" v-show="vis.mail">
                         <div class="drag-handle" v-show="editMode">{{ locales.mail_label || 'Mail' }}</div>
                         <div class="resize-handle" v-show="editMode"></div>
@@ -58,6 +53,11 @@
 
                 <div id="stat-strip">
                     <div class="stat-group stat-group-player">
+                        <div class="mini-badge voice-inline draggable-element" data-element="voice" v-show="vis.voice" :style="{ color: iconColor('voice', talking) }" :class="{ talking }">
+                        <div class="drag-handle" v-show="editMode">{{ locales.voice_label || 'Voice' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-microphone"></i>
+                    </div>
                         <div class="stat-row draggable-element stat-circle" data-element="health" v-show="vis.health">
                             <div class="drag-handle" v-show="editMode">{{ locales.health_label || 'Health' }}</div>
                             <div class="resize-handle" v-show="editMode"></div>
@@ -135,6 +135,67 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div id="preset-menu" class="hidden" v-cloak>
+            <div class="preset-panel" v-if="open">
+                <div class="preset-header">
+                    <div class="preset-title">{{ t('preset_title', 'HUD Preset') }}</div>
+                    <div class="preset-subtitle">{{ t('preset_subtitle', 'Layout Presets') }}</div>
+                    <button class="circle-btn preset-close" @click="cancel"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="ornament-divider"><span>&#10022;</span></div>
+
+                <div class="preset-section">
+                    <div class="preset-label">{{ t('preset_size', 'Icon Size') }}</div>
+                    <div class="preset-options cols-3">
+                        <button v-for="s in sizes" :key="s" class="preset-opt" :class="{ active: preset.size === s }" @click="pick('size', s)">
+                            <span class="size-dot" :class="'dot-' + s"></span>{{ t('preset_size_' + s, s) }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">{{ t('preset_align', 'Position') }}</div>
+                    <div class="preset-screen">
+                        <button v-for="a in aligns" :key="a" class="screen-spot" :class="['spot-' + a, { active: preset.align === a }]" @click="pick('align', a)" :title="t('preset_align_' + a.replace('-', '_'), a)">
+                            <span class="spot-bar" :class="preset.orientation"></span>
+                        </button>
+                    </div>
+                    <div class="preset-current">{{ t('preset_align_' + preset.align.replace('-', '_'), preset.align) }}</div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">{{ t('preset_orientation', 'Layout') }}</div>
+                    <div class="preset-options cols-2">
+                        <button v-for="o in orientations" :key="o" class="preset-opt" :class="{ active: preset.orientation === o }" @click="pick('orientation', o)">
+                            <i class="fa-solid" :class="o === 'horizontal' ? 'fa-grip' : 'fa-grip-vertical'"></i>{{ t('preset_orient_' + o, o) }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">{{ t('preset_offset', 'Fine Position') }}</div>
+                    <div class="offset-box">
+                        <div class="arrow-pad">
+                            <span class="key k-up" :class="{ pressed: pressed === 'ArrowUp' }" @click="nudge(0, -1, false)"><i class="fa-solid fa-caret-up"></i></span>
+                            <span class="key k-left" :class="{ pressed: pressed === 'ArrowLeft' }" @click="nudge(-1, 0, false)"><i class="fa-solid fa-caret-left"></i></span>
+                            <span class="key k-down" :class="{ pressed: pressed === 'ArrowDown' }" @click="nudge(0, 1, false)"><i class="fa-solid fa-caret-down"></i></span>
+                            <span class="key k-right" :class="{ pressed: pressed === 'ArrowRight' }" @click="nudge(1, 0, false)"><i class="fa-solid fa-caret-right"></i></span>
+                        </div>
+                        <div class="offset-readout">
+                            <div class="offset-val"><span>X</span><b :class="{ bump: bumpX }">{{ fmt(preset.offsetX) }}</b></div>
+                            <div class="offset-val"><span>Y</span><b :class="{ bump: bumpY }">{{ fmt(preset.offsetY) }}</b></div>
+                            <button class="wood-btn muted small" @click="resetOffset" :disabled="!preset.offsetX && !preset.offsetY">{{ t('preset_offset_reset', 'Reset') }}</button>
+                        </div>
+                    </div>
+                    <div class="preset-current">{{ t('preset_offset_hint', 'Arrow keys to move · Shift for bigger steps') }}</div>
+                </div>
+
+                <div class="preset-actions">
+                    <button class="wood-btn muted" @click="cancel">{{ t('preset_cancel', 'Cancel') }}</button>
+                    <button class="wood-btn" @click="save">{{ t('preset_save', 'Apply') }}</button>
                 </div>
             </div>
         </div>

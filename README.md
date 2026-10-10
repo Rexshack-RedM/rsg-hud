@@ -18,10 +18,25 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, hunger, thirst, clean
 | `/edithud` | Toggle edit mode (drag elements, resize with the corner handle, `ESC` to exit) |
 | `/resethud` | Reset all HUD positions and sizes |
 | `/togglehudpct` | Show/hide percentages under the circles (saved per player) |
+| `/hudpreset` | Open the HUD preset panel (see below) |
 | `/cash` | Show cash balance |
 | `/bloodmoney` | Show bloodmoney balance |
 
 Positions, sizes and the percentage toggle are saved in the player's NUI storage.
+
+## HUD presets (`/hudpreset`)
+A NUI panel where each player picks:
+- **Icon size**: small / medium / large
+- **Position**: top or bottom, left / center / right (click a spot on the mini screen)
+- **Layout**: horizontal or vertical
+- **Fine position**: nudge the whole HUD with the **arrow keys** (Shift = bigger steps), with a live X/Y readout
+
+Changes preview live. `Enter` / **Apply** saves (client KVP, survives relogs); `Esc` / **Cancel** reverts.
+Applying a preset clears custom drag/resize of the stat icons (the money HUD keeps its spot).
+Server default: `Config.DefaultPreset` · command name: `Config.PresetCommand`.
+
+## Voice icon
+Disabled by default. Enable with `Config.ShowVoice = true`; `Config.VoiceAlwaysVisible` controls always-on vs only while talking.
 
 ## Events (client)
 | Event | Args |

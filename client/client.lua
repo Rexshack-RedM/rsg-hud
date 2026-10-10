@@ -27,8 +27,47 @@ end
 local localeKeys = {
     'edit_mode_on_title', 'edit_mode_on_desc', 'edit_mode_off_desc', 'reset_hud_title', 'reset_hud_desc',
     'money_hud_label', 'voice_label', 'outlaw_label', 'temp_label', 'health_label', 'stamina_label', 'hunger_label', 'thirst_label',
-    'clean_label', 'stress_label', 'mail_label', 'horse_health_label', 'horse_stamina_label', 'horse_clean_label'
+    'clean_label', 'stress_label', 'mail_label', 'horse_health_label', 'horse_stamina_label', 'horse_clean_label',
+    'preset_title', 'preset_subtitle', 'preset_size', 'preset_align', 'preset_orientation', 'preset_save', 'preset_cancel',
+    'preset_size_small', 'preset_size_medium', 'preset_size_large',
+    'preset_align_bottom_left', 'preset_align_bottom_center', 'preset_align_bottom_right',
+    'preset_align_top_left', 'preset_align_top_center', 'preset_align_top_right',
+    'preset_orient_horizontal', 'preset_orient_vertical',
+    'preset_offset', 'preset_offset_hint', 'preset_offset_reset'
 }
+
+------------------------------------------------
+-- hud layout presets (saved per player in client KVP)
+------------------------------------------------
+local PRESET_KVP = 'rsghud_preset'
+local VALID_PRESET = {
+    size = { small = true, medium = true, large = true },
+    align = { ['bottom-left'] = true, ['bottom-center'] = true, ['bottom-right'] = true, ['top-left'] = true, ['top-center'] = true, ['top-right'] = true },
+    orientation = { horizontal = true, vertical = true },
+}
+
+local function clampOffset(v)
+    return math.floor(math.max(-2000, math.min(2000, tonumber(v) or 0)))
+end
+
+local function getPreset()
+    local def = Config.DefaultPreset or {}
+    local preset = { size = def.size or 'medium', align = def.align or 'bottom-center', orientation = def.orientation or 'horizontal', offsetX = 0, offsetY = 0 }
+    local raw = GetResourceKvpString(PRESET_KVP)
+    local saved = raw and json.decode(raw)
+    if type(saved) == 'table' then
+        for key, valid in pairs(VALID_PRESET) do
+            if valid[saved[key]] then preset[key] = saved[key] end
+        end
+        preset.offsetX = clampOffset(saved.offsetX)
+        preset.offsetY = clampOffset(saved.offsetY)
+    end
+    return preset
+end
+
+local function sendPreset(clearCustom)
+    SendNUIMessage({ action = 'applyPreset', preset = getPreset(), clearCustom = clearCustom == true })
+end
 
 local function sendConfigToNUI()
     local locales = {}
@@ -36,7 +75,8 @@ local function sendConfigToNUI()
         locales[key] = locale(key)
     end
     SendNUIMessage({ action = 'setLocales', locales = locales })
-    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceAlwaysVisible = Config.VoiceAlwaysVisible, showPercentages = Config.ShowPercentages })
+    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true, voiceAlwaysVisible = Config.VoiceAlwaysVisible, showPercentages = Config.ShowPercentages })
+    sendPreset(false)
 end
 
 -- NUI tells us when it has loaded (avoids the old fixed Wait(1000) race)
@@ -99,7 +139,7 @@ end)
 ------------------------------------------------
 local function updateNeed(key, value, reduce)
     if reduce then
-        value = (LocalPlayer.state[key] or 0) - value
+        value = (LocalPlayer.state[key] or (key == 'stress' and 0 or 100)) - value
     end
 
     value = lib.math.clamp(lib.math.round(value, 2), 0, 100)
@@ -489,7 +529,7 @@ CreateThread(function()
                 hunger = LocalPlayer.state.hunger or 100,
                 cleanliness = LocalPlayer.state.cleanliness or 100,
                 stress = LocalPlayer.state.stress or 0,
-                talking = Citizen.InvokeNative(0x33EEF97F, cache.playerId) and true or false,
+                talking = Config.ShowVoice and Citizen.InvokeNative(0x33EEF97F, cache.playerId) and true or false, -- NetworkIsPlayerTalking
                 temp = temperature,
                 onHorse = mounted,
                 horsehealth = horsehealth,
@@ -559,8 +599,8 @@ RegisterNetEvent('hud:client:OnMoneyChange', function(type, amount, isMinus)
         cash = lib.math.round(playerData.money.cash or 0, 2),
         bloodmoney = lib.math.round(playerData.money.bloodmoney or 0, 2),
         bank = lib.math.round(playerData.money.bank or 0, 2),
-        amount = lib.math.round(amount or 0, 2),
-        minus = isMinus,
+        amount = lib.math.round(tonumber(amount) or 0, 2),
+        minus = isMinus and true or false,
         type = type,
     })
 end)
@@ -568,7 +608,11 @@ end)
 ------------------------------------------------
 -- hud edit mode
 ------------------------------------------------
+local presetOpen = false
+
 local function setEditMode(enabled)
+    if enabled and presetOpen then return end -- preset panel owns NUI focus
+    if enabled == editMode then return end
     editMode = enabled
     SendNUIMessage({ action = 'toggleEditMode', enabled = enabled })
     SetNuiFocus(enabled, enabled)
@@ -604,6 +648,39 @@ RegisterCommand('resethud', function()
     })
 end, false)
 
+local function setPresetMenu(open)
+    presetOpen = open
+    SetNuiFocus(open, open)
+    if open then SetNuiFocusKeepInput(false) end
+    SendNUIMessage({ action = open and 'openPresetMenu' or 'closePresetMenu', preset = getPreset() })
+end
+
+RegisterCommand(Config.PresetCommand or 'hudpreset', function()
+    if editMode then return end
+    setPresetMenu(not presetOpen)
+end, false)
+
+RegisterNUICallback('savePreset', function(data, cb)
+    local preset = { size = data and data.size, align = data and data.align, orientation = data and data.orientation,
+        offsetX = clampOffset(data and data.offsetX), offsetY = clampOffset(data and data.offsetY) }
+    for key, valid in pairs(VALID_PRESET) do
+        if not valid[preset[key]] then cb('invalid') return end
+    end
+    SetResourceKvp(PRESET_KVP, json.encode(preset))
+    setPresetMenu(false)
+    sendPreset(true) -- a preset replaces any custom drag/resize of the stat icons
+    lib.notify({ title = locale('preset_title'), description = locale('preset_applied'), type = 'success', duration = 3000 })
+    cb('ok')
+end)
+
+RegisterNUICallback('closePresetMenu', function(_, cb)
+    if presetOpen then
+        setPresetMenu(false)
+        sendPreset(false) -- revert any live preview
+    end
+    cb('ok')
+end)
+
 -- ESC pressed in NUI
 RegisterNUICallback('disableEditMode', function(_, cb)
     if editMode then setEditMode(false) end
@@ -637,7 +714,7 @@ end)
 exports('AddNeed', function(key, amount)
     amount = tonumber(amount)
     if not NEEDS[key] or not amount then return false end
-    updateNeed(key, (LocalPlayer.state[key] or 0) + amount)
+    updateNeed(key, (LocalPlayer.state[key] or (key == 'stress' and 0 or 100)) + amount)
     return true
 end)
 
@@ -660,5 +737,5 @@ AddEventHandler('onResourceStop', function(resource)
     removeFlies()
     setDamageFx(false)
     StopGameplayCamShaking(true)
-    if editMode then SetNuiFocus(false, false) end
+    if editMode or presetOpen then SetNuiFocus(false, false) end
 end)

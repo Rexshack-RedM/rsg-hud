@@ -86,6 +86,7 @@ Vue.createApp({
         return {
             show: false,
             editMode: false,
+            voiceEnabled: false,
             voiceAlwaysVisible: true,
             showPct: true,
             iconColors: {},
@@ -104,6 +105,7 @@ Vue.createApp({
                 case 'setLocales': this.locales = data.locales; break;
                 case 'setConfig':
                     this.iconColors = data.iconColors || {};
+                    this.voiceEnabled = data.voiceEnabled === true;
                     this.voiceAlwaysVisible = data.voiceAlwaysVisible !== false;
                     {
                         // player's saved choice wins over the server default
@@ -134,7 +136,7 @@ Vue.createApp({
                 stress: e || this.stress > 0,
                 temp: true,
                 horse: e || this.onHorse,
-                voice: e || this.voiceAlwaysVisible || this.talking,
+                voice: this.voiceEnabled && (e || this.voiceAlwaysVisible || this.talking),
                 mail: e || this.youhavemail,
                 outlaw: e || this.isOutlaw
             };
@@ -194,6 +196,7 @@ Vue.createApp({
 }).mount('#ui-container');
 
 // ============ HUD DRAG / RESIZE (edit mode) ============
+const STYLE_PROPS = ['position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'transform', 'transformOrigin', 'display', 'flex', 'alignSelf'];
 class HUDDragSystem {
     constructor() {
         this.mode = null;          // 'drag' | 'resize' | null
@@ -315,7 +318,7 @@ class HUDDragSystem {
 
     applySize(el, size) {
         el.style.width = size + 'px';
-        if (el.classList.contains('stat-circle')) {
+        if (el.classList.contains('stat-circle') || el.classList.contains('voice-inline')) {
             el.style.height = size + 'px';
             el.style.flex = `0 0 ${size}px`; // CSS flex-basis was pinning the width at 72px
             el.style.alignSelf = 'center';
@@ -353,13 +356,24 @@ class HUDDragSystem {
         document.body.style.userSelect = '';
     }
 
-    resetToDefaults() {
+    // drop custom drag/resize for stat icons + badges (money keeps its spot)
+    clearStatLayout() {
         this.stop();
-        document.querySelectorAll('#money-container, .stat-row, .mini-badge').forEach(el => {
-            ['position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'transform', 'transformOrigin', 'display']
-                .forEach(p => { el.style[p] = ''; });
+        document.querySelectorAll('#ui-container .draggable-element').forEach(el => {
+            STYLE_PROPS.forEach(p => { el.style[p] = ''; });
             el.classList.remove('dragging', 'resizing');
+            el.style.removeProperty('--circle-size');
+            const name = el.getAttribute('data-element');
+            if (name) { delete this.positions[name]; delete this.sizes[name]; }
         });
+        safeStorage.set('hudPositions', this.positions);
+        safeStorage.set('hudSizes', this.sizes);
+    }
+
+    resetToDefaults() {
+        this.clearStatLayout();
+        const money = this.find('money');
+        if (money) STYLE_PROPS.forEach(p => { money.style[p] = ''; });
         this.positions = {};
         this.sizes = {};
         safeStorage.set('hudPositions', this.positions);
@@ -367,7 +381,94 @@ class HUDDragSystem {
     }
 }
 
-new HUDDragSystem();
+const hudDrag = new HUDDragSystem();
+
+// live-apply preset classes to the stat HUD
+function applyPresetClasses(p) {
+    const ui = document.getElementById('ui-container');
+    if (!ui || !p) return;
+    [...ui.classList].filter(c => /^(hud-size|hud-pos|hud-orient)-/.test(c)).forEach(c => ui.classList.remove(c));
+    ui.classList.add(`hud-size-${p.size || 'medium'}`, `hud-pos-${p.align || 'bottom-center'}`, `hud-orient-${p.orientation || 'horizontal'}`);
+    ui.style.setProperty('--hud-offset-x', (Number(p.offsetX) || 0) + 'px');
+    ui.style.setProperty('--hud-offset-y', (Number(p.offsetY) || 0) + 'px');
+}
+
+// ============ PRESET MENU (NUI) ============
+Vue.createApp({
+    data() {
+        return {
+            open: false,
+            locales: {},
+            sizes: ['small', 'medium', 'large'],
+            aligns: ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'],
+            orientations: ['horizontal', 'vertical'],
+            preset: { size: 'medium', align: 'bottom-center', orientation: 'horizontal', offsetX: 0, offsetY: 0 },
+            pressed: null, bumpX: false, bumpY: false
+        };
+    },
+    mounted() {
+        document.getElementById('preset-menu').classList.remove('hidden');
+        this.listener = ({ data }) => {
+            if (data.action === 'setLocales') this.locales = data.locales || {};
+            else if (data.action === 'openPresetMenu') { this.preset = { ...this.preset, ...(data.preset || {}) }; this.open = true; }
+            else if (data.action === 'closePresetMenu') this.open = false;
+        };
+        const ARROWS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+        this.keyListener = (e) => {
+            if (!this.open) return;
+            if (e.key === 'Escape') return this.cancel();
+            if (e.key === 'Enter') return this.save();
+            const dir = ARROWS[e.key];
+            if (!dir) return;
+            e.preventDefault();
+            this.nudge(dir[0], dir[1], e.shiftKey, e.key);
+        };
+        this.keyUpListener = (e) => { if (ARROWS[e.key]) this.pressed = null; };
+        document.addEventListener('keyup', this.keyUpListener);
+        window.addEventListener('message', this.listener);
+        document.addEventListener('keydown', this.keyListener);
+    },
+    unmounted() {
+        window.removeEventListener('message', this.listener);
+        document.removeEventListener('keydown', this.keyListener);
+        document.removeEventListener('keyup', this.keyUpListener);
+    },
+    methods: {
+        t(key, fallback) { return this.locales[key] || fallback; },
+        pick(key, value) {
+            this.preset[key] = value;
+            if (key === 'align') { this.preset.offsetX = 0; this.preset.offsetY = 0; } // new anchor = fresh offset
+            applyPresetClasses(this.preset);
+        }, // live preview
+        fmt(v) { v = Math.round(v || 0); return (v > 0 ? '+' : '') + v + 'px'; },
+        nudge(dx, dy, big, key) {
+            const step = big ? 20 : 4;
+            const limX = Math.round(window.innerWidth * 0.9), limY = Math.round(window.innerHeight * 0.9);
+            this.preset.offsetX = Math.max(-limX, Math.min(limX, (this.preset.offsetX || 0) + dx * step));
+            this.preset.offsetY = Math.max(-limY, Math.min(limY, (this.preset.offsetY || 0) + dy * step));
+            if (key) this.pressed = key;
+            this.flashBump(dx ? 'bumpX' : 'bumpY');
+            applyPresetClasses(this.preset);
+        },
+        flashBump(flag) {
+            this[flag] = false;
+            requestAnimationFrame(() => { this[flag] = true; });
+            clearTimeout(this['t_' + flag]);
+            this['t_' + flag] = setTimeout(() => { this[flag] = false; }, 180);
+        },
+        resetOffset() { this.preset.offsetX = 0; this.preset.offsetY = 0; applyPresetClasses(this.preset); },
+        save() { this.open = false; nuiPost('savePreset', { ...this.preset }); },
+        cancel() { this.open = false; this.pressed = null; nuiPost('closePresetMenu'); }
+    }
+}).mount('#preset-menu');
+
+// ============ LAYOUT PRESETS (size / position / orientation) ============
+window.addEventListener('message', ({ data }) => {
+    if (data.action !== 'applyPreset' || !data.preset) return;
+    const p = data.preset;
+    applyPresetClasses(p);
+    if (data.clearCustom) hudDrag.clearStatLayout();
+});
 
 // Tell Lua the NUI is ready so it can send locales + colours
 nuiPost('nuiReady');

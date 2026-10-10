@@ -32,8 +32,19 @@ Config.HideHorseCourageNative = true
 ----------------------------------
 -- voice icon settings
 ----------------------------------
+Config.ShowVoice = false          -- true = show the voice icon on the HUD, false = voice icon disabled
 Config.VoiceAlwaysVisible = true  -- true = always visible, false = only when talking
 Config.ShowPercentages = false    -- default for the % under circle icons (players can toggle with /togglehudpct, saved per player)
+
+----------------------------------
+-- hud layout presets (players change with /hudpreset, saved per player)
+----------------------------------
+Config.PresetCommand = 'hudpreset'
+Config.DefaultPreset = {
+    size = 'medium',          -- 'small' | 'medium' | 'large'
+    align = 'bottom-center',  -- 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right'
+    orientation = 'horizontal' -- 'horizontal' | 'vertical'
+}
 
 ----------------------------------
 -- minimap / compass settings

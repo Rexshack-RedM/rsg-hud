@@ -17,12 +17,25 @@ addBalanceCommand('bloodmoney', locale('cmd_bloodmoney_help'))
 ---------------------------------
 -- get outlaw status
 ---------------------------------
+-- cached per player so a spamming client can't hammer the database
+local OUTLAW_CACHE_MS = 20000
+local outlawCache = {}
+
 RSGCore.Functions.CreateCallback('hud:server:getoutlawstatus', function(source, cb)
     local Player = RSGCore.Functions.GetPlayer(source)
     if not Player then return cb(0) end
 
-    local status = MySQL.scalar.await('SELECT outlawstatus FROM players WHERE citizenid = ?', { Player.PlayerData.citizenid })
-    cb(tonumber(status) or 0)
+    local now = GetGameTimer()
+    local cached = outlawCache[source]
+    if cached and now - cached.time < OUTLAW_CACHE_MS then return cb(cached.value) end
+
+    local status = tonumber(MySQL.scalar.await('SELECT outlawstatus FROM players WHERE citizenid = ?', { Player.PlayerData.citizenid })) or 0
+    outlawCache[source] = { time = now, value = status }
+    cb(status)
+end)
+
+AddEventHandler('playerDropped', function()
+    outlawCache[source] = nil
 end)
 
 
