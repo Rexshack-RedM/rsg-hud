@@ -43,5 +43,15 @@
     "preset_cancel": "Cancel",
     "preset_offset": "Fine Position",
     "preset_offset_hint": "Arrow keys to move · Shift for bigger steps",
-    "preset_offset_reset": "Reset"
+    "preset_offset_reset": "Reset",
+    "cmd_bank_help": "Check Bank Balance",
+    "low_need_title": "Needs",
+    "low_hunger": "You are getting hungry",
+    "low_thirst": "You are getting thirsty",
+    "temp_status_title": "Temperature",
+    "temp_cold": "You are freezing, find warmth or wear warmer clothes",
+    "temp_hot": "You are overheating, find shade and cool down",
+    "deadeye_label": "👁️ Dead Eye",
+    "horse_bond_label": "🐎🤝 Horse Bonding",
+    "preset_visibility": "Show Icons"
 }

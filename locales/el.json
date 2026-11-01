@@ -43,5 +43,15 @@
     "preset_cancel": "Cancel",
     "preset_offset": "Fine Position",
     "preset_offset_hint": "Arrow keys to move · Shift for bigger steps",
-    "preset_offset_reset": "Reset"
+    "preset_offset_reset": "Reset",
+    "cmd_bank_help": "Έλεγχος υπολοίπου τράπεζας",
+    "low_need_title": "Ανάγκες",
+    "low_hunger": "Αρχίζεις να πεινάς",
+    "low_thirst": "Αρχίζεις να διψάς",
+    "temp_status_title": "Θερμοκρασία",
+    "temp_cold": "Παγώνεις, βρες ζέστη ή φόρεσε πιο ζεστά ρούχα",
+    "temp_hot": "Υπερθερμαίνεσαι, βρες σκιά και δροσίσου",
+    "deadeye_label": "👁️ Dead Eye",
+    "horse_bond_label": "🐎🤝 Δεσμός αλόγου",
+    "preset_visibility": "Εμφάνιση εικονιδίων"
 }

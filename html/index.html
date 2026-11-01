@@ -72,6 +72,13 @@
                             <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('stamina', stamina <= 30) }"><i class="fa-solid fa-bolt"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(stamina) }}%</span></div>
                         </div>
 
+                        <div class="stat-row draggable-element stat-circle" data-element="deadeye" v-show="vis.deadeye">
+                            <div class="drag-handle" v-show="editMode">{{ locales.deadeye_label || 'Dead Eye' }}</div>
+                            <div class="resize-handle" v-show="editMode"></div>
+                            <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(deadeye)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(deadeye) + ' 100' }"/></svg>
+                            <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('deadeye', deadeye <= 30) }"><i class="fa-solid fa-eye"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(deadeye) }}%</span></div>
+                        </div>
+
                         <div class="stat-row draggable-element stat-circle" data-element="hunger" v-show="vis.hunger">
                             <div class="drag-handle" v-show="editMode">{{ locales.hunger_label || 'Hunger' }}</div>
                             <div class="resize-handle" v-show="editMode"></div>
@@ -100,11 +107,11 @@
                             <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('stress', stress >= 70) }"><i class="fa-solid fa-brain"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(stress) }}%</span></div>
                         </div>
 
-                        <div class="stat-row draggable-element stat-circle" data-element="temp" v-show="vis.temp">
+                        <div class="stat-row draggable-element stat-circle" data-element="temp" v-show="vis.temp" :class="{ 'temp-alert': tempStatus }">
                             <div class="drag-handle" v-show="editMode">{{ locales.temp_label || 'Temp' }}</div>
                             <div class="resize-handle" v-show="editMode"></div>
                             <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="tempClass" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: tempPct + ' 100' }"/></svg>
-                            <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: tempColor }"><i class="fa-solid fa-temperature-half"></i></span><span class="stat-pct" v-show="showPct">{{ temp }}</span></div>
+                            <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: tempColor }"><i class="fa-solid" :class="tempIcon"></i></span><span class="stat-pct" v-show="showPct">{{ temp }}</span></div>
                         </div>
                     </div>
 
@@ -133,6 +140,14 @@
                                 <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(horseclean)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horseclean) + ' 100' }"/></svg>
                                 <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('horse_clean', horseclean <= 30) }"><i class="fa-solid fa-pump-soap"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(horseclean) }}%</span></div>
                             </div>
+                        </div>
+                                <div class="stat-row draggable-element stat-circle horse-stat" data-element="horse-bond" v-show="vis.horsebond">
+                                    <span class="horse-tag"><i class="fa-solid fa-horse-head"></i></span>
+                                    <div class="drag-handle" v-show="editMode">{{ locales.horse_bond_label || 'Bonding' }}</div>
+                                    <div class="resize-handle" v-show="editMode"></div>
+                                    <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(horsebond)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsebond) + ' 100' }"/></svg>
+                                    <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('horse_bond', false) }"><i class="fa-solid fa-handshake-angle"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(horsebond) }}%</span></div>
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -191,6 +206,15 @@
                         </div>
                     </div>
                     <div class="preset-current">{{ t('preset_offset_hint', 'Arrow keys to move · Shift for bigger steps') }}</div>
+                </div>
+
+                <div class="preset-section">
+                    <div class="preset-label">{{ t('preset_visibility', 'Show Icons') }}</div>
+                    <div class="preset-options cols-3">
+                        <button v-for="k in hideable" :key="k.key" class="preset-opt vis-opt" :class="{ active: !preset.hidden[k.key] }" @click="toggleHidden(k.key)">
+                            <i class="fa-solid" :class="preset.hidden[k.key] ? 'fa-eye-slash' : 'fa-eye'"></i>{{ stripEmoji(t(k.label, k.key)) }}
+                        </button>
+                    </div>
                 </div>
 
                 <div class="preset-actions">

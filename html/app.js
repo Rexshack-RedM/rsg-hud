@@ -14,6 +14,13 @@ const safeStorage = {
     }
 };
 
+// icons the player hid via /hudpreset (shared between the HUD and preset apps)
+const hudHidden = Vue.reactive({});
+function setHidden(list) {
+    Object.keys(hudHidden).forEach(k => delete hudHidden[k]);
+    Object.entries(list || {}).forEach(([k, v]) => { if (v) hudHidden[k] = true; });
+}
+
 // ============ MONEY HUD ============
 // Configure your currency / locale here
 const moneyFormatter = new Intl.NumberFormat('en-US', {
@@ -94,7 +101,10 @@ Vue.createApp({
             health: 0, stamina: 0, hunger: 0, thirst: 0, cleanliness: 0, stress: 0,
             temp: '0°C',
             onHorse: false, horsehealth: 0, horsestamina: 0, horseclean: 0,
-            talking: false, youhavemail: false, outlawstatus: 0
+            talking: false, youhavemail: false, outlawstatus: 0,
+            deadeye: 0, horsebond: 0, tempStatus: false,
+            deadeyeEnabled: false, bondEnabled: false,
+            hidden: hudHidden
         };
     },
     mounted() {
@@ -107,6 +117,8 @@ Vue.createApp({
                     this.iconColors = data.iconColors || {};
                     this.voiceEnabled = data.voiceEnabled === true;
                     this.voiceAlwaysVisible = data.voiceAlwaysVisible !== false;
+                    this.deadeyeEnabled = data.deadeyeEnabled === true;
+                    this.bondEnabled = data.bondEnabled === true;
                     {
                         // player's saved choice wins over the server default
                         let saved = safeStorage.get('rsghud_showpct');
@@ -126,10 +138,11 @@ Vue.createApp({
     computed: {
         // visibility: elements hide when "full"/irrelevant, edit mode forces everything on
         vis() {
-            const e = this.editMode;
-            return {
+            const e = this.editMode, h = this.hidden;
+            const v = {
                 health: e || this.health < 100,
                 stamina: e || this.stamina < 100,
+                deadeye: this.deadeyeEnabled && (e || this.deadeye < 100),
                 hunger: e || this.hunger < 100,
                 thirst: e || this.thirst < 100,
                 cleanliness: e || this.cleanliness < 100,
@@ -140,12 +153,22 @@ Vue.createApp({
                 mail: e || this.youhavemail,
                 outlaw: e || this.isOutlaw
             };
+            // player-hidden icons stay hidden outside edit mode
+            if (!e) Object.keys(h).forEach(k => { if (k in v) v[k] = false; });
+            v.horsebond = this.bondEnabled && v.horse;
+            return v;
         },
         isOutlaw() { return this.outlawstatus >= 100; },
         tempValue() { return parseFloat(this.temp) || 0; },
         isFahrenheit() { return String(this.temp).includes('F'); },
         tempCelsius() { return this.isFahrenheit ? (this.tempValue - 32) * 5 / 9 : this.tempValue; },
+        tempIcon() {
+            if (this.tempStatus === 'cold') return 'fa-snowflake';
+            if (this.tempStatus === 'hot') return 'fa-sun';
+            return 'fa-temperature-half';
+        },
         tempClass() {
+            if (this.tempStatus) return 'stat-bad';
             const c = this.tempCelsius;
             if (c <= 0 || c >= 40) return 'stat-bad';
             if (c <= 10 || c >= 30) return 'stat-warn';
@@ -185,11 +208,14 @@ Vue.createApp({
             this.talking = data.talking;
             this.youhavemail = data.youhavemail;
             this.outlawstatus = Number(data.outlawstatus) || 0;
+            this.deadeye = Number(data.deadeye) || 0;
+            this.tempStatus = data.tempStatus || false;
             this.onHorse = data.onHorse;
             if (data.onHorse) {
                 this.horsehealth = data.horsehealth;
                 this.horsestamina = data.horsestamina;
                 this.horseclean = data.horseclean;
+                this.horsebond = Number(data.horsebond) || 0;
             }
         }
     }
@@ -402,7 +428,13 @@ Vue.createApp({
             sizes: ['small', 'medium', 'large'],
             aligns: ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'],
             orientations: ['horizontal', 'vertical'],
-            preset: { size: 'medium', align: 'bottom-center', orientation: 'horizontal', offsetX: 0, offsetY: 0 },
+            preset: { size: 'medium', align: 'bottom-center', orientation: 'horizontal', offsetX: 0, offsetY: 0, hidden: {} },
+            hideable: [
+                { key: 'health', label: 'health_label' }, { key: 'stamina', label: 'stamina_label' }, { key: 'deadeye', label: 'deadeye_label' },
+                { key: 'hunger', label: 'hunger_label' }, { key: 'thirst', label: 'thirst_label' }, { key: 'cleanliness', label: 'clean_label' },
+                { key: 'stress', label: 'stress_label' }, { key: 'temp', label: 'temp_label' }, { key: 'voice', label: 'voice_label' },
+                { key: 'mail', label: 'mail_label' }, { key: 'outlaw', label: 'outlaw_label' }, { key: 'horse', label: 'horse_health_label' }
+            ],
             pressed: null, bumpX: false, bumpY: false
         };
     },
@@ -410,7 +442,7 @@ Vue.createApp({
         document.getElementById('preset-menu').classList.remove('hidden');
         this.listener = ({ data }) => {
             if (data.action === 'setLocales') this.locales = data.locales || {};
-            else if (data.action === 'openPresetMenu') { this.preset = { ...this.preset, ...(data.preset || {}) }; this.open = true; }
+            else if (data.action === 'openPresetMenu') { this.preset = { ...this.preset, ...(data.preset || {}) }; this.preset.hidden = { ...(this.preset.hidden || {}) }; this.open = true; }
             else if (data.action === 'closePresetMenu') this.open = false;
         };
         const ARROWS = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
@@ -440,6 +472,13 @@ Vue.createApp({
             if (key === 'align') { this.preset.offsetX = 0; this.preset.offsetY = 0; } // new anchor = fresh offset
             applyPresetClasses(this.preset);
         }, // live preview
+        toggleHidden(key) {
+            const h = { ...this.preset.hidden };
+            if (h[key]) delete h[key]; else h[key] = true;
+            this.preset.hidden = h;
+            setHidden(h); // live preview
+        },
+        stripEmoji(s) { return String(s).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim(); },
         fmt(v) { v = Math.round(v || 0); return (v > 0 ? '+' : '') + v + 'px'; },
         nudge(dx, dy, big, key) {
             const step = big ? 20 : 4;
@@ -467,6 +506,7 @@ window.addEventListener('message', ({ data }) => {
     if (data.action !== 'applyPreset' || !data.preset) return;
     const p = data.preset;
     applyPresetClasses(p);
+    setHidden(p.hidden);
     if (data.clearCustom) hudDrag.clearStatLayout();
 });
 

@@ -7,6 +7,17 @@ Config.StatusInterval = 5000 -- how often to update hunger/thirst status in mill
 Config.HungerRate = 0.01 -- Rate at which hunger goes down.
 Config.ThirstRate = 0.01 -- Rate at which thirst goes down.
 
+-- server-owned needs: the server decays hunger/thirst/stress and reverts client state bag tampering
+Config.ServerNeeds = true
+Config.MaxNeedGainPerMinute = 150 -- max hunger/thirst a client may add per minute (eating/drinking); more is reverted
+
+----------------------------------
+-- warnings
+----------------------------------
+Config.LowNeedWarning = 20       -- notify when hunger/thirst drops to this value (0 = off)
+Config.LowHealthHeartbeat = 25   -- play a heartbeat below this health % (0 = off)
+Config.HeartbeatSound = { name = 'Heartbeat', set = 'RDRO_Sniper_Tension_Sounds' } -- rdr3_discoveries audio/frontend_soundsets
+
 ----------------------------------
 -- stress settings
 ----------------------------------
@@ -28,6 +39,17 @@ Config.HidePlayerDeadEyeNative = true
 Config.HideHorseHealthNative  = true
 Config.HideHorseStaminaNative = true
 Config.HideHorseCourageNative = true
+
+----------------------------------
+-- extra icons
+----------------------------------
+Config.ShowDeadEye = true      -- deadeye core circle
+Config.ShowHorseBonding = true -- horse bonding level circle
+
+----------------------------------
+-- bank balance command (uses rsg-banking v3 total balance when started)
+----------------------------------
+Config.BankCommand = 'bank'
 
 ----------------------------------
 -- voice icon settings
@@ -79,6 +101,7 @@ Config.TempFormat = 'celsius'
 -- temp feature (does damage to player if too hot or cold)
 ----------------------------------
 Config.TempFeature = false
+Config.TempStaminaDrain = 10 -- cold/heatstroke drains this much stamina core per StatusInterval before health is hit
 
 ----------------------------------
 -- warmth add while wearing, in °C (temp feature must be enabled)
@@ -213,6 +236,10 @@ Config.IconColors = {
         normal = '#FFFFFF',      -- White when clean
         low = '#e0554f'          -- Red when dirty (<=30%)
     },
+    ['deadeye'] = {
+        normal = '#FFFFFF',
+        low = '#e0554f'
+    },
     ['stress'] = {
         normal = '#FFFFFF',      -- White (stress icon color)
     },
@@ -237,6 +264,10 @@ Config.IconColors = {
     ['horse_stamina'] = {
         normal = '#f2f2f2',      -- Soft white for horse stamina
         low = '#e0554f'          -- Red when low
+    },
+    ['horse_bond'] = {
+        normal = '#d9a441',      -- Gold for bonding
+        low = '#f2f2f2'
     },
     ['horse_clean'] = {
         normal = '#f2f2f2',      -- Soft white for horse cleanliness

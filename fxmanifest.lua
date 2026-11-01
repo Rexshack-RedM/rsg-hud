@@ -4,10 +4,10 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 lua54 'yes'
 
 description 'rsg-hud'
-version '3.0.0'
+version '3.1.0'
 
 shared_scripts {
-    '@ox_lib/init.lua',
+    '@rsg-core/shared/locale.lua',
     'shared/config.lua'
 }
 
@@ -23,7 +23,6 @@ server_scripts {
 
 dependencies {
     'rsg-core',
-    'ox_lib',
     'oxmysql',
 }
 

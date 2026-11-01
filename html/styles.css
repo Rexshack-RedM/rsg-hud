@@ -642,3 +642,11 @@ body {
 .offset-val b.bump { color: var(--rdr-cost-ok); transform: scale(1.15); }
 .wood-btn.small { flex: none; padding: 5px 10px; font-size: 10.5px; }
 .wood-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+/* temperature status (cold / heatstroke) */
+.stat-circle.temp-alert .stat-icon { animation: temp-pulse 1.4s ease-in-out infinite; }
+@keyframes temp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* preset visibility toggles */
+.preset-opt.vis-opt { font-size: 11px; gap: 6px; }
+.preset-opt.vis-opt:not(.active) { opacity: 0.55; }

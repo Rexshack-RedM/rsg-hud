@@ -43,5 +43,15 @@
     "preset_cancel": "Cancel",
     "preset_offset": "Fine Position",
     "preset_offset_hint": "Arrow keys to move · Shift for bigger steps",
-    "preset_offset_reset": "Reset"
+    "preset_offset_reset": "Reset",
+    "cmd_bank_help": "Ver saldo bancário",
+    "low_need_title": "Necessidades",
+    "low_hunger": "Você está ficando com fome",
+    "low_thirst": "Você está ficando com sede",
+    "temp_status_title": "Temperatura",
+    "temp_cold": "Você está congelando, procure calor ou vista roupas mais quentes",
+    "temp_hot": "Você está superaquecendo, procure sombra e se refresque",
+    "deadeye_label": "👁️ Dead Eye",
+    "horse_bond_label": "🐎🤝 Vínculo com o cavalo",
+    "preset_visibility": "Mostrar ícones"
 }
