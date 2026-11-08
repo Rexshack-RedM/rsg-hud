@@ -22,7 +22,7 @@ function setHidden(list) {
 }
 
 // per-player display settings (from the saved preset, shared by the HUD + settings apps)
-const hudDisplay = Vue.reactive({ showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {} });
+const hudDisplay = Vue.reactive({ showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {}, ringWarn: 70, ringBad: 30 });
 const RING_DEFAULTS = { good: '#6fbf73', warn: '#d9a441', bad: '#e0554f' };
 function applyDisplay(d) {
     Object.assign(hudDisplay, d || {});
@@ -201,7 +201,8 @@ Vue.createApp({
         clampPct(v) { return Math.max(0, Math.min(100, Math.round(parseFloat(v) || 0))); },
         barClass(v) {
             const n = parseFloat(v) || 0;
-            return n <= LOW ? 'stat-bad' : n <= 70 ? 'stat-warn' : 'stat-good';
+            const bad = Number(this.display.ringBad) || LOW, warn = Number(this.display.ringWarn) || 70;
+            return n <= bad ? 'stat-bad' : n <= warn ? 'stat-warn' : 'stat-good';
         },
         barClassInvert(v) {
             const n = parseFloat(v) || 0;
@@ -492,7 +493,7 @@ Vue.createApp({
             orientations: ['horizontal', 'vertical'],
             mapModes: [{ key: 'off', icon: 'fa-ban' }, { key: 'map', icon: 'fa-map' }, { key: 'compass', icon: 'fa-compass' }],
             mapRows: [{ key: 'mapFoot', label: 'set_map_foot', icon: 'fa-person-walking' }, { key: 'mapMount', label: 'set_map_mount', icon: 'fa-horse' }],
-            sliders: [{ key: 'opacity', label: 'set_opacity' }, { key: 'scale', label: 'set_scale' }],
+            sliders: [{ key: 'opacity', label: 'set_opacity' }, { key: 'scale', label: 'set_scale' }, { key: 'ringWarn', label: 'set_ring_warn' }, { key: 'ringBad', label: 'set_ring_bad' }],
             preset: { size: 'medium', align: 'bottom-center', orientation: 'horizontal', offsetX: 0, offsetY: 0, hidden: {}, display: { ...hudDisplay } },
             hideable: [
                 { key: 'health', label: 'health_label' }, { key: 'stamina', label: 'stamina_label' }, { key: 'deadeye', label: 'deadeye_label', needs: 'deadeyeEnabled' },
@@ -579,11 +580,17 @@ Vue.createApp({
             setHidden(h); // live preview
         },
         setDisplay(key, val) {
-            this.preset.display = { ...this.preset.display, [key]: val };
+            const next = { ...this.preset.display, [key]: val };
+            // keep red below orange: dragging one pushes the other along
+            if (key === 'ringWarn' && (Number(next.ringBad) || 30) > val - 5) next.ringBad = Math.max(5, val - 5);
+            if (key === 'ringBad' && (Number(next.ringWarn) || 70) < val + 5) next.ringWarn = Math.min(95, val + 5);
+            this.preset.display = next;
             applyDisplay(this.preset.display); // live preview
         },
         toggleDisplay(key) { this.setDisplay(key, !this.preset.display[key]); },
         range(key) {
+            if (key === 'ringWarn') return [10, 95];
+            if (key === 'ringBad') return [5, 90];
             return key === 'opacity' ? [this.limits.minOpacity || 30, 100] : [this.limits.minScale || 70, this.limits.maxScale || 140];
         },
         fillPct(key) {

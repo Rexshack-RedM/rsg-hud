@@ -9,6 +9,7 @@ Config.ThirstRate = 0.01 -- Rate at which thirst goes down.
 
 -- server-owned needs: the server decays hunger/thirst/stress and reverts client state bag tampering
 Config.ServerNeeds = true
+Config.MaxStressReliefPerMinute = 50 -- max stress a client may remove per minute (smoking, drinking, etc.); more is reverted
 Config.MaxNeedGainPerMinute = 150 -- max hunger/thirst a client may add per minute (eating/drinking); more is reverted
 
 ----------------------------------
@@ -66,6 +67,10 @@ Config.SettingsCommand = 'hudsettings' -- opens the HUD settings window
 Config.PresetCommand = 'hudpreset'     -- old command name, opens the same window
 Config.AllowPlayerMinimap = true       -- let players choose minimap / compass / off (on foot + mounted); false = server Config only
 Config.AllowPlayerColors = true        -- let players recolour icons + rings with the colour picker; false = Config.IconColors only
+-- default ring colour thresholds (players can change these in /hudsettings > Display)
+Config.RingWarnAt = 70           -- ring turns orange at or below this %
+Config.RingBadAt = 30            -- ring turns red at or below this %
+
 Config.SettingsLimits = {
     minOpacity = 30, -- lowest HUD opacity a player may pick (%)
     minScale = 70,   -- smallest icon scale (%)

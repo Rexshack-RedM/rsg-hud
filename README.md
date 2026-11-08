@@ -3,7 +3,7 @@
 Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thirst, cleanliness, stress, temperature, voice, mail and outlaw badges, horse health/stamina/cleanliness/bonding/hunger/thirst, a money pop-up, and a drag-and-resize edit mode.
 
 ## Features
-- **Server-owned needs** (`Config.ServerNeeds`): the server decays hunger, thirst and stress and reverts state bag tampering. Clients can still add hunger/thirst by eating/drinking, capped by `Config.MaxNeedGainPerMinute`. Values persist through rsg-core metadata.
+- **Server-owned needs** (`Config.ServerNeeds`): the server decays hunger, thirst and stress and reverts state bag tampering. Clients can still add hunger/thirst by eating/drinking, capped by `Config.MaxNeedGainPerMinute`; stress relief from the client is capped by `Config.MaxStressReliefPerMinute`. Values persist through rsg-core metadata.
 - **Warnings**: a notification when hunger/thirst drops to `Config.LowNeedWarning`, and a heartbeat sound below `Config.LowHealthHeartbeat` % health.
 - **Dead eye and horse bonding icons** (`Config.ShowDeadEye`, `Config.ShowHorseBonding`).
 - **Horse hunger and thirst icons** while mounted on your own active rsg-stables horse (`Config.ShowHorseNeeds`). Needs the `GetActiveHorseNeeds` client export in rsg-stables (see DOCS.md); hidden on borrowed/wild horses or when rsg-stables isn't running.
@@ -43,7 +43,7 @@ A movable NUI window (drag it by the title bar, double-click the title to re-cen
 |---|---|
 | **Layout** | Icon size (small/medium/large), screen position (click a spot on the mini screen), horizontal/vertical, fine position with the **arrow keys** (Shift = bigger steps) |
 | **Icons** | Show/hide each icon (incl. dead eye, horse bonding, horse hunger/thirst), *Always show icons* (even when full), **Drag & Resize Icons** (saves and enters edit mode), **Reset Icon Positions** |
-| **Display** | Percentages on/off, voice icon always on, money pop-ups on/off, HUD opacity slider, icon scale slider |
+| **Display** | Percentages on/off, voice icon always on, money pop-ups on/off, HUD opacity slider, icon scale slider, ring colour thresholds (when rings turn orange / red) |
 | **Map** | Minimap / compass / off, separately for on foot and on horse/vehicle (only when `Config.AllowPlayerMinimap = true`) |
 | **Colours** | Colour picker (colour square, hue bar, swatches, hex input) for every icon's *normal* and *alert* colour, and for the ring colours (good / warning / low). Per-icon and reset-all buttons (only when `Config.AllowPlayerColors = true`) |
 
@@ -51,7 +51,7 @@ Every change previews live. `Enter` / **Apply** saves (client KVP, survives relo
 Only changing the *Layout* tab clears custom drag/resize of the stat icons; other settings keep them.
 Push-to-talk keeps working while the window or edit mode is open (`Config.AllowPushToTalkWhileOpen`, `Config.PushToTalkControls`).
 
-Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`, `Config.AllowPlayerMinimap`, `Config.AllowPlayerColors`, `Config.SettingsLimits` (min opacity, min/max scale). `Config.ShowPercentages`, `Config.VoiceAlwaysVisible`, `Config.IconColors` and the minimap options are the defaults for players who haven't changed them.
+Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`, `Config.AllowPlayerMinimap`, `Config.AllowPlayerColors`, `Config.SettingsLimits` (min opacity, min/max scale), `Config.RingWarnAt` / `Config.RingBadAt` (default ring thresholds). `Config.ShowPercentages`, `Config.VoiceAlwaysVisible`, `Config.IconColors` and the minimap options are the defaults for players who haven't changed them.
 
 ## Voice icon
 Disabled by default. Enable with `Config.ShowVoice = true`; `Config.VoiceAlwaysVisible` controls always-on vs only while talking.

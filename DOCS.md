@@ -28,7 +28,7 @@ rsg-hud only shows the values when `needs.entity` matches the horse you're ridin
 `horsehunger` / `horsethirst` — number 0–100, or omitted (nil) when there's no data for the mounted horse.
 
 ### Debug
-`/hudhorseneeds` prints (F8) the rsg-stables export result and the mounted horse handle. If `mount` and `active` differ, or `ok=false`, the circles show `--`.
+Horse hunger/thirst come from `exports['rsg-stables']:GetActiveHorseNeeds()` and only show for your own active horse; otherwise the circles show `--`.
 
 ### Locales
 `horse_hunger_label`, `horse_thirst_label` (all locale files).
@@ -47,6 +47,7 @@ Opened with `/hudsettings` (or `/hudpreset`), or from another script with `expor
     opacity = 100,  -- Config.SettingsLimits.minOpacity..100
     scale = 100,    -- Config.SettingsLimits.minScale..maxScale (multiplies the preset circle/badge size)
     mapFoot = 'map', mapMount = 'map', -- 'off' | 'map' | 'compass' (player value only used when Config.AllowPlayerMinimap)
+    ringWarn = 70, ringBad = 30,  -- ring turns orange / red at or below these % (red is always ≥5 below orange)
     colors = { ['health.normal'] = '#4fa3e0', ['health.alert'] = '#c0392b', ['ring.good'] = '#6fbf73' }, -- only when Config.AllowPlayerColors
   }
 }
@@ -74,3 +75,16 @@ All focus goes through `applyNuiFocus`; while the settings window or edit mode h
 ### Colours
 Keys are `<icon>.normal` / `<icon>.alert` (icon keys as in `Config.IconColors`: health, stamina, deadeye, hunger, thirst, cleanliness, stress, temp, voice, mail, outlaw, horse_health, horse_stamina, horse_clean, horse_bond, horse_hunger, horse_thirst) and `ring.good` / `ring.warn` / `ring.bad`. *Alert* replaces the low/active/hasmail/cold colour. Only `#rrggbb` values are kept (max 64 entries); a colour equal to the server default isn't stored. Ring colours are applied as CSS variables `--ring-good/-warn/-bad` on `#ui-container`. The picker is pure HTML (no native `<input type="color">`).
 Locales: `tab_colors`, `col_*`.
+
+
+## Ring thresholds
+
+Each player can set when stat rings change colour from **/hudsettings → Display** (*Orange Ring Below* / *Red Ring Below*, 5–95% in steps of 5). Defaults come from `Config.RingWarnAt` (70) and `Config.RingBadAt` (30). Saved in the player's preset (`display.ringWarn` / `display.ringBad`), clamped client-side so red always stays at least 5% below orange. Applies to health, stamina, dead eye, hunger, thirst, cleanliness and the horse rings; stress (inverted) and temperature keep their own fixed bands.
+
+## Server-owned needs (anti-tamper)
+
+With `Config.ServerNeeds = true` the server keeps the authoritative hunger / thirst / stress values:
+
+- Seeded from rsg-core metadata on `RSGCore:Server:PlayerLoaded` (not from the client's state bag).
+- Clients may raise hunger/thirst by up to `Config.MaxNeedGainPerMinute` and lower stress by up to `Config.MaxStressReliefPerMinute` per minute; anything beyond that is reverted.
+- Server exports `SetNeed`, `GainStress` and `RelieveStress` write the value directly and are not subject to these limits.

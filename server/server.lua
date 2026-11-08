@@ -68,9 +68,18 @@ local function setAuth(src, key, value)
     Player(src).state:set(key, auth[src][key], true)
 end
 
-local function initAuth(src)
+-- on login we seed from the server's own metadata so a client can't pre-load the state bag before the first tick;
+-- after a resource restart (fromMetadata = false) the live state bag is newer than metadata, so use that
+local function initAuth(src, fromMetadata)
+    local P = fromMetadata and RSGCore.Functions.GetPlayer(src)
+    local md = P and P.PlayerData.metadata or {}
     local st = Player(src).state
-    auth[src] = { hunger = tonumber(st.hunger) or 100, thirst = tonumber(st.thirst) or 100, stress = tonumber(st.stress) or 0 }
+    auth[src] = {
+        hunger = clampNeed(tonumber(md.hunger) or tonumber(st.hunger) or 100),
+        thirst = clampNeed(tonumber(md.thirst) or tonumber(st.thirst) or 100),
+        stress = clampNeed(tonumber(md.stress) or tonumber(st.stress) or 0),
+    }
+    for k, v in pairs(auth[src]) do st:set(k, v, true) end
     return auth[src]
 end
 
@@ -88,15 +97,19 @@ if Config.ServerNeeds then
                 return SetTimeout(0, function() setAuth(src, k, a[k]) end)
             end
 
+            -- hunger/thirst may only go up (eating/drinking) and stress only down (relief) within a per-minute budget
             local delta = value - a[k]
-            if k ~= 'stress' and delta > 0 then
+            local gain = (k == 'stress') and -delta or delta
+            if gain > 0 then
+                local limit = k == 'stress' and (Config.MaxStressReliefPerMinute or 50) or Config.MaxNeedGainPerMinute
                 local now = os.time()
                 local g = gained[src]
-                if not g or now - g.t >= 60 then g = { t = now, amount = 0 }; gained[src] = g end
-                if g.amount + delta > Config.MaxNeedGainPerMinute then
+                if not g or now - g.t >= 60 then g = { t = now, need = 0, stress = 0 }; gained[src] = g end
+                local bucket = k == 'stress' and 'stress' or 'need'
+                if g[bucket] + gain > limit then
                     return SetTimeout(0, function() setAuth(src, k, a[k]) end) -- too much, revert
                 end
-                g.amount = g.amount + delta
+                g[bucket] = g[bucket] + gain
             end
             a[k] = clampNeed(value)
             if a[k] ~= value then SetTimeout(0, function() setAuth(src, k, a[k]) end) end
@@ -119,10 +132,15 @@ if Config.ServerNeeds then
         end
     end)
 
-    AddEventHandler('RSGCore:Server:OnPlayerUnload', function(src)
-        auth[src], gained[src] = nil, nil
+    AddEventHandler('RSGCore:Server:PlayerLoaded', function(P)
+        local src = P and P.PlayerData and P.PlayerData.source
+        if src then initAuth(src, true) end
     end)
 end
+
+AddEventHandler('RSGCore:Server:OnPlayerUnload', function(src)
+    auth[src], gained[src], outlawCache[src] = nil, nil, nil
+end)
 
 AddEventHandler('playerDropped', function()
     outlawCache[source] = nil
@@ -159,17 +177,19 @@ exports('GetNeeds', function(src)
     return { hunger = s.hunger or 100, thirst = s.thirst or 100, cleanliness = s.cleanliness or 100, stress = s.stress or 0 }
 end)
 
-exports('GainStress', function(src, amount)
-    if not validTarget(src) or not tonumber(amount) then return false end
-    TriggerClientEvent('hud:client:GainStress', src, tonumber(amount))
+local function changeStress(src, amount, isGain)
+    amount = tonumber(amount)
+    if not amount or amount <= 0 or not validTarget(src) then return false end
+    if Config.ServerNeeds then
+        local a = auth[src] or initAuth(src)
+        setAuth(src, 'stress', a.stress + (isGain and amount or -amount)) -- trusted, not subject to the client relief limit
+    end
+    TriggerClientEvent(isGain and 'hud:client:GainStress' or 'hud:client:RelieveStress', src, amount, Config.ServerNeeds == true)
     return true
-end)
+end
 
-exports('RelieveStress', function(src, amount)
-    if not validTarget(src) or not tonumber(amount) then return false end
-    TriggerClientEvent('hud:client:RelieveStress', src, tonumber(amount))
-    return true
-end)
+exports('GainStress', function(src, amount) return changeStress(src, amount, true) end)
+exports('RelieveStress', function(src, amount) return changeStress(src, amount, false) end)
 
 exports('ShowAccount', function(src, account)
     local P = src and RSGCore.Functions.GetPlayer(src)

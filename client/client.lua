@@ -43,7 +43,7 @@ local localeKeys = {
     'deadeye_label', 'horse_bond_label', 'horse_hunger_label', 'horse_thirst_label', 'preset_visibility',
     'settings_title', 'settings_subtitle', 'tab_layout', 'tab_icons', 'tab_display', 'tab_map',
     'set_show_pct', 'set_show_pct_desc', 'set_always_show', 'set_always_show_desc', 'set_voice_always', 'set_voice_always_desc',
-    'set_money', 'set_money_desc', 'set_opacity', 'set_scale', 'set_map_foot', 'set_map_mount', 'map_off', 'map_map', 'map_compass',
+    'set_money', 'set_money_desc', 'set_opacity', 'set_scale', 'set_ring_warn', 'set_ring_bad', 'set_map_foot', 'set_map_mount', 'map_off', 'map_map', 'map_compass',
     'set_positions', 'set_edit', 'set_edit_desc', 'set_reset_pos', 'set_reset_done', 'set_drag_hint', 'set_saved',
     'tab_colors', 'col_icons', 'col_rings', 'col_normal', 'col_alert', 'col_good', 'col_warn', 'col_bad', 'col_default', 'col_reset_all', 'col_pick_hint'
 }
@@ -94,6 +94,8 @@ local function defaultDisplay()
         mapFoot = Config.OnFootMinimap and 'map' or (Config.OnFootCompass and 'compass' or 'off'),
         mapMount = Config.MountMinimap and (Config.MountCompass and 'compass' or 'map') or 'off',
         colors = {},
+        ringWarn = clampInt(Config.RingWarnAt, 10, 95, 70), -- ring turns orange at or below this %
+        ringBad = clampInt(Config.RingBadAt, 5, 90, 30),    -- ring turns red at or below this %
     }
 end
 
@@ -121,6 +123,8 @@ local function sanitiseDisplay(d)
     local lim = Config.SettingsLimits or {}
     out.opacity = clampInt(d.opacity, lim.minOpacity or 30, 100, out.opacity)
     out.scale = clampInt(d.scale, lim.minScale or 70, lim.maxScale or 140, out.scale)
+    out.ringBad = clampInt(d.ringBad, 5, 90, out.ringBad)
+    out.ringWarn = clampInt(d.ringWarn, out.ringBad + 5, 95, math.max(out.ringWarn, out.ringBad + 5))
     if Config.AllowPlayerMinimap then
         if MAP_MODES[d.mapFoot] then out.mapFoot = d.mapFoot end
         if MAP_MODES[d.mapMount] then out.mapMount = d.mapMount end
@@ -265,18 +269,21 @@ RegisterNetEvent('hud:client:UpdateCleanliness', function(v) setNeed('cleanlines
 local STRESS_NOTIFY_COOLDOWN = 30000
 local lastStressNotify = { gain = 0, relieve = 0 }
 
-local function updateStress(amount, isGain)
+-- serverApplied: the server export already wrote the value, we only show the notification
+local function updateStress(amount, isGain, serverApplied)
     amount = tonumber(amount)
     if not amount or amount <= 0 then return end
 
-    local playerData = RSGCore.Functions.GetPlayerData()
-    if not playerData or not playerData.metadata or playerData.metadata['isdead'] then return end
-    if isGain and playerData.job and playerData.job.type == 'leo' then return end -- law doesn't gain stress
+    if not serverApplied then
+        local playerData = RSGCore.Functions.GetPlayerData()
+        if not playerData or not playerData.metadata or playerData.metadata['isdead'] then return end
+        if isGain and playerData.job and playerData.job.type == 'leo' then return end -- law doesn't gain stress
 
-    local current = LocalPlayer.state.stress or 0
-    local newStress = round2(clamp(current + (isGain and amount or -amount), 0, 100))
-    if newStress == current then return end
-    LocalPlayer.state:set('stress', newStress, true)
+        local current = LocalPlayer.state.stress or 0
+        local newStress = round2(clamp(current + (isGain and amount or -amount), 0, 100))
+        if newStress == current then return end
+        LocalPlayer.state:set('stress', newStress, true)
+    end
 
     -- throttle notifications so shooting/speeding doesn't spam the feed
     local key = isGain and 'gain' or 'relieve'
@@ -287,12 +294,12 @@ local function updateStress(amount, isGain)
     end
 end
 
-RegisterNetEvent('hud:client:GainStress', function(amount)
-    updateStress(amount, true)
+RegisterNetEvent('hud:client:GainStress', function(amount, serverApplied)
+    updateStress(amount, true, serverApplied == true)
 end)
 
-RegisterNetEvent('hud:client:RelieveStress', function(amount)
-    updateStress(amount, false)
+RegisterNetEvent('hud:client:RelieveStress', function(amount, serverApplied)
+    updateStress(amount, false, serverApplied == true)
 end)
 
 local function getRangeValue(list, level, key, default)
@@ -328,7 +335,7 @@ CreateThread(function()
             if IsPedShooting(ped) and math.random() < Config.StressChance then
                 updateStress(math.random(1, 3), true)
             end
-            Wait(100)
+            Wait(0) -- IsPedShooting is only true for the frame the shot fires
         else
             Wait(1000)
         end
@@ -502,9 +509,6 @@ exports('GetOutlawStatus', function()
 end)
 
 ------------------------------------------------
--- health / needs decay loop
-------------------------------------------------
-------------------------------------------------
 -- warnings: low hunger/thirst + temperature status
 ------------------------------------------------
 local lowWarned = { hunger = false, thirst = false }
@@ -626,6 +630,8 @@ CreateThread(function()
             end
 
             checkLowNeeds(state)
+        else
+            setDamageFx(false) -- don't carry the downed effect through death / respawn
         end
     end
 end)
@@ -660,17 +666,6 @@ local function getHorseNeeds(horse)
     return round(math.max(0, math.min(100, tonumber(needs.hunger) or 100))),
            round(math.max(0, math.min(100, tonumber(needs.thirst) or 100)))
 end
-
--- /hudhorseneeds : prints what rsg-stables reports vs the horse you're riding
-RegisterCommand('hudhorseneeds', function()
-    local mount = IsPedOnMount(PlayerPedId()) and GetMount(PlayerPedId()) or 0
-    local ok, needs = pcall(function() return exports['rsg-stables']:GetActiveHorseNeeds() end)
-    print(('[rsg-hud] stables=%s ok=%s mount=%s active=%s hunger=%s thirst=%s'):format(
-        GetResourceState('rsg-stables'), tostring(ok), mount,
-        type(needs) == 'table' and needs.entity or 'nil',
-        type(needs) == 'table' and needs.hunger or 'nil',
-        type(needs) == 'table' and needs.thirst or 'nil'))
-end, false)
 
 CreateThread(function()
     while true do
