@@ -40,7 +40,7 @@ local localeKeys = {
     'preset_align_top_left', 'preset_align_top_center', 'preset_align_top_right',
     'preset_orient_horizontal', 'preset_orient_vertical',
     'preset_offset', 'preset_offset_hint', 'preset_offset_reset',
-    'deadeye_label', 'horse_bond_label', 'preset_visibility'
+    'deadeye_label', 'horse_bond_label', 'horse_hunger_label', 'horse_thirst_label', 'preset_visibility'
 }
 
 ------------------------------------------------
@@ -97,7 +97,7 @@ local function sendConfigToNUI()
     end
     SendNUIMessage({ action = 'setLocales', locales = locales })
     SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true, voiceAlwaysVisible = Config.VoiceAlwaysVisible, showPercentages = Config.ShowPercentages,
-        deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true })
+        deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true, horseNeedsEnabled = Config.ShowHorseNeeds == true })
     sendPreset(false)
 end
 
@@ -578,6 +578,28 @@ local function round(v)
     return math.floor(v + 0.5)
 end
 
+------------------------------------------------
+-- horse hunger / thirst (from rsg-stables, own active horse only)
+------------------------------------------------
+local function getHorseNeeds(horse)
+    if GetResourceState('rsg-stables') ~= 'started' then return nil, nil end
+    local ok, needs = pcall(function() return exports['rsg-stables']:GetActiveHorseNeeds() end)
+    if not ok or type(needs) ~= 'table' or needs.entity ~= horse then return nil, nil end
+    return round(math.max(0, math.min(100, tonumber(needs.hunger) or 100))),
+           round(math.max(0, math.min(100, tonumber(needs.thirst) or 100)))
+end
+
+-- /hudhorseneeds : prints what rsg-stables reports vs the horse you're riding
+RegisterCommand('hudhorseneeds', function()
+    local mount = IsPedOnMount(PlayerPedId()) and GetMount(PlayerPedId()) or 0
+    local ok, needs = pcall(function() return exports['rsg-stables']:GetActiveHorseNeeds() end)
+    print(('[rsg-hud] stables=%s ok=%s mount=%s active=%s hunger=%s thirst=%s'):format(
+        GetResourceState('rsg-stables'), tostring(ok), mount,
+        type(needs) == 'table' and needs.entity or 'nil',
+        type(needs) == 'table' and needs.hunger or 'nil',
+        type(needs) == 'table' and needs.thirst or 'nil'))
+end, false)
+
 CreateThread(function()
     while true do
         Wait(500)
@@ -590,12 +612,16 @@ CreateThread(function()
             local ped = PlayerPedId()
             local mounted = IsPedOnMount(ped)
             local horsehealth, horsestamina, horseclean, horsebond = 0, 0, 0, 0
+            local horsehunger, horsethirst = nil, nil
 
             if mounted then
                 local horse = GetMount(ped)
                 local maxHealth = Citizen.InvokeNative(0x4700A416E8324EF3, horse, Citizen.ResultAsInteger())
                 local maxStamina = Citizen.InvokeNative(0xCB42AFE2B613EE55, horse, Citizen.ResultAsFloat())
                 horseclean = 100 - getDirt(horse)
+                if Config.ShowHorseNeeds then
+                    horsehunger, horsethirst = getHorseNeeds(horse)
+                end
                 if Config.ShowHorseBonding then
                     local maxBond = Citizen.InvokeNative(0x704674A0535A471D, horse, 7, Citizen.ResultAsInteger()) -- GET_MAX_ATTRIBUTE_RANK (PA_Bonding)
                     if maxBond and maxBond > 0 then
@@ -628,6 +654,8 @@ CreateThread(function()
                 horsestamina = horsestamina,
                 horseclean = horseclean,
                 horsebond = horsebond,
+                horsehunger = horsehunger,
+                horsethirst = horsethirst,
                 deadeye = Config.ShowDeadEye and (Citizen.InvokeNative(0x36731AC041289BB1, ped, 2, Citizen.ResultAsInteger()) or 0) or 0, -- _GET_ATTRIBUTE_CORE_VALUE (deadeye)
                 tempStatus = tempStatus or false,
                 youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,

@@ -53,5 +53,7 @@
     "temp_hot": "Je raakt oververhit, zoek schaduw en koel af",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Paardenband",
-    "preset_visibility": "Pictogrammen tonen"
+    "preset_visibility": "Pictogrammen tonen",
+    "horse_hunger_label": "🐎🌾 Paardenhonger",
+    "horse_thirst_label": "🐎💧 Paardendorst"
 }

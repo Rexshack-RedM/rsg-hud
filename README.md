@@ -1,11 +1,12 @@
 # rsg-hud
 
-Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thirst, cleanliness, stress, temperature, voice, mail and outlaw badges, horse health/stamina/cleanliness/bonding, a money pop-up, and a drag-and-resize edit mode.
+Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thirst, cleanliness, stress, temperature, voice, mail and outlaw badges, horse health/stamina/cleanliness/bonding/hunger/thirst, a money pop-up, and a drag-and-resize edit mode.
 
 ## Features
 - **Server-owned needs** (`Config.ServerNeeds`): the server decays hunger, thirst and stress and reverts state bag tampering. Clients can still add hunger/thirst by eating/drinking, capped by `Config.MaxNeedGainPerMinute`. Values persist through rsg-core metadata.
 - **Warnings**: a notification when hunger/thirst drops to `Config.LowNeedWarning`, and a heartbeat sound below `Config.LowHealthHeartbeat` % health.
 - **Dead eye and horse bonding icons** (`Config.ShowDeadEye`, `Config.ShowHorseBonding`).
+- **Horse hunger and thirst icons** while mounted on your own active rsg-stables horse (`Config.ShowHorseNeeds`). Needs the `GetActiveHorseNeeds` client export in rsg-stables (see DOCS.md); hidden on borrowed/wild horses or when rsg-stables isn't running.
 - **Cold / heatstroke status** (with `Config.TempFeature`): the temperature icon switches to a snowflake/sun and pulses; the stamina core drains by `Config.TempStaminaDrain` first, and health is only hit once it's empty.
 - **Per-icon visibility** in `/hudpreset` (saved per player).
 - **Bank balance** via `/bank`, using rsg-banking v3's total across all branches (falls back to the core `bank` money).
@@ -13,6 +14,7 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 ## Dependencies
 - [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
 - [rsg-banking](https://github.com/Rexshack-RedM/rsg-banking) v3 (optional, for `/bank`)
+- [rsg-stables](https://github.com/Rexshack-RedM/rsg-stables) (optional, for horse hunger/thirst)
 - [oxmysql](https://github.com/overextended/oxmysql) (reads `players.outlawstatus`)
 
 ## Installation

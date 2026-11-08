@@ -100,10 +100,10 @@ Vue.createApp({
             locales: {},
             health: 0, stamina: 0, hunger: 0, thirst: 0, cleanliness: 0, stress: 0,
             temp: '0°C',
-            onHorse: false, horsehealth: 0, horsestamina: 0, horseclean: 0,
+            onHorse: false, horsehealth: 0, horsestamina: 0, horseclean: 0, horsehunger: null, horsethirst: null,
             talking: false, youhavemail: false, outlawstatus: 0,
             deadeye: 0, horsebond: 0, tempStatus: false,
-            deadeyeEnabled: false, bondEnabled: false,
+            deadeyeEnabled: false, bondEnabled: false, horseNeedsEnabled: false,
             hidden: hudHidden
         };
     },
@@ -119,6 +119,7 @@ Vue.createApp({
                     this.voiceAlwaysVisible = data.voiceAlwaysVisible !== false;
                     this.deadeyeEnabled = data.deadeyeEnabled === true;
                     this.bondEnabled = data.bondEnabled === true;
+                    this.horseNeedsEnabled = data.horseNeedsEnabled === true;
                     {
                         // player's saved choice wins over the server default
                         let saved = safeStorage.get('rsghud_showpct');
@@ -156,6 +157,9 @@ Vue.createApp({
             // player-hidden icons stay hidden outside edit mode
             if (!e) Object.keys(h).forEach(k => { if (k in v) v[k] = false; });
             v.horsebond = this.bondEnabled && v.horse;
+            // only shown for the player's own rsg-stables horse (null = no data)
+            v.horsehunger = this.horseNeedsEnabled && v.horse && (e || this.horsehunger !== null);
+            v.horsethirst = this.horseNeedsEnabled && v.horse && (e || this.horsethirst !== null);
             return v;
         },
         isOutlaw() { return this.outlawstatus >= 100; },
@@ -216,6 +220,8 @@ Vue.createApp({
                 this.horsestamina = data.horsestamina;
                 this.horseclean = data.horseclean;
                 this.horsebond = Number(data.horsebond) || 0;
+                this.horsehunger = typeof data.horsehunger === 'number' ? data.horsehunger : null;
+                this.horsethirst = typeof data.horsethirst === 'number' ? data.horsethirst : null;
             }
         }
     }

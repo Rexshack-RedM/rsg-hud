@@ -53,5 +53,7 @@
     "temp_hot": "体が熱すぎます。日陰で体を冷やしてください",
     "deadeye_label": "👁️ デッドアイ",
     "horse_bond_label": "🐎🤝 馬との絆",
-    "preset_visibility": "アイコン表示"
+    "preset_visibility": "アイコン表示",
+    "horse_hunger_label": "🐎🌾 馬の空腹",
+    "horse_thirst_label": "🐎💧 馬の渇き"
 }

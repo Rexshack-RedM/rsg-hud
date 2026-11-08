@@ -53,5 +53,7 @@
     "temp_hot": "Te supraîncălzești, caută umbră și răcorește-te",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Legătura cu calul",
-    "preset_visibility": "Afișează pictograme"
+    "preset_visibility": "Afișează pictograme",
+    "horse_hunger_label": "🐎🌾 Foamea Calului",
+    "horse_thirst_label": "🐎💧 Setea Calului"
 }

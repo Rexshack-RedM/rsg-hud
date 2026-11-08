@@ -53,5 +53,7 @@
     "temp_hot": "You are overheating, find shade and cool down",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Horse Bonding",
-    "preset_visibility": "Show Icons"
+    "preset_visibility": "Show Icons",
+    "horse_hunger_label": "🐎🌾 Horse Hunger",
+    "horse_thirst_label": "🐎💧 Horse Thirst"
 }

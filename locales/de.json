@@ -53,5 +53,7 @@
     "temp_hot": "Du überhitzt, suche Schatten und kühl dich ab",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Pferdebindung",
-    "preset_visibility": "Symbole anzeigen"
+    "preset_visibility": "Symbole anzeigen",
+    "horse_hunger_label": "🐎🌾 Pferdehunger",
+    "horse_thirst_label": "🐎💧 Pferdedurst"
 }

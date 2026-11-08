@@ -53,5 +53,7 @@
     "temp_hot": "Υπερθερμαίνεσαι, βρες σκιά και δροσίσου",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Δεσμός αλόγου",
-    "preset_visibility": "Εμφάνιση εικονιδίων"
+    "preset_visibility": "Εμφάνιση εικονιδίων",
+    "horse_hunger_label": "🐎🌾 Πείνα Αλόγου",
+    "horse_thirst_label": "🐎💧 Δίψα Αλόγου"
 }

@@ -53,5 +53,7 @@
     "temp_hot": "Przegrzewasz się, znajdź cień i ochłoń",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Więź z koniem",
-    "preset_visibility": "Pokaż ikony"
+    "preset_visibility": "Pokaż ikony",
+    "horse_hunger_label": "🐎🌾 Głód Konia",
+    "horse_thirst_label": "🐎💧 Pragnienie Konia"
 }

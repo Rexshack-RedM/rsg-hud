@@ -45,6 +45,7 @@ Config.HideHorseCourageNative = true
 ----------------------------------
 Config.ShowDeadEye = true      -- deadeye core circle
 Config.ShowHorseBonding = true -- horse bonding level circle
+Config.ShowHorseNeeds = true   -- horse hunger + thirst circles (needs rsg-stables, own active horse only)
 
 ----------------------------------
 -- bank balance command (uses rsg-banking v3 total balance when started)
@@ -272,5 +273,13 @@ Config.IconColors = {
     ['horse_clean'] = {
         normal = '#f2f2f2',      -- Soft white for horse cleanliness
         low = '#e0554f'          -- Red when dirty
+    },
+    ['horse_hunger'] = {
+        normal = '#f2f2f2',      -- Soft white for horse hunger
+        low = '#e0554f'          -- Red when hungry
+    },
+    ['horse_thirst'] = {
+        normal = '#f2f2f2',      -- Soft white for horse thirst
+        low = '#e0554f'          -- Red when thirsty
     }
 }

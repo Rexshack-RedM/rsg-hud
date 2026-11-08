@@ -148,6 +148,20 @@
                                     <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(horsebond)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsebond) + ' 100' }"/></svg>
                                     <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('horse_bond', false) }"><i class="fa-solid fa-handshake-angle"></i></span><span class="stat-pct" v-show="showPct">{{ Math.round(horsebond) }}%</span></div>
                                 </div>
+                                <div class="stat-row draggable-element stat-circle horse-stat" data-element="horse-hunger" v-show="vis.horsehunger">
+                                    <span class="horse-tag"><i class="fa-solid fa-horse-head"></i></span>
+                                    <div class="drag-handle" v-show="editMode">{{ locales.horse_hunger_label || 'Horse Hunger' }}</div>
+                                    <div class="resize-handle" v-show="editMode"></div>
+                                    <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(horsehunger ?? 0)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsehunger ?? 0) + ' 100' }"/></svg>
+                                    <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('horse_hunger', (horsehunger ?? 0) <= 30) }"><i class="fa-solid fa-wheat-awn"></i></span><span class="stat-pct" v-show="showPct">{{ horsehunger === null ? '--' : Math.round(horsehunger) + '%' }}</span></div>
+                                </div>
+                                <div class="stat-row draggable-element stat-circle horse-stat" data-element="horse-thirst" v-show="vis.horsethirst">
+                                    <span class="horse-tag"><i class="fa-solid fa-horse-head"></i></span>
+                                    <div class="drag-handle" v-show="editMode">{{ locales.horse_thirst_label || 'Horse Thirst' }}</div>
+                                    <div class="resize-handle" v-show="editMode"></div>
+                                    <svg class="stat-ring" viewBox="0 0 36 36"><circle class="ring-track" cx="18" cy="18" r="15.5"/><circle class="ring-fill" :class="barClass(horsethirst ?? 0)" cx="18" cy="18" r="15.5" :style="{ strokeDasharray: clampPct(horsethirst ?? 0) + ' 100' }"/></svg>
+                                    <div class="stat-circle-inner"><span class="stat-icon" :style="{ color: iconColor('horse_thirst', (horsethirst ?? 0) <= 30) }"><i class="fa-solid fa-droplet"></i></span><span class="stat-pct" v-show="showPct">{{ horsethirst === null ? '--' : Math.round(horsethirst) + '%' }}</span></div>
+                                </div>
                         </div>
                     </div>
                 </div>

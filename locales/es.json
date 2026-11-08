@@ -53,5 +53,7 @@
     "temp_hot": "Te estás sobrecalentando, busca sombra y refréscate",
     "deadeye_label": "👁️ Dead Eye",
     "horse_bond_label": "🐎🤝 Vínculo con el caballo",
-    "preset_visibility": "Mostrar iconos"
+    "preset_visibility": "Mostrar iconos",
+    "horse_hunger_label": "🐎🌾 Hambre del Caballo",
+    "horse_thirst_label": "🐎💧 Sed del Caballo"
 }
