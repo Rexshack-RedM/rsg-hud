@@ -168,67 +168,204 @@
             </div>
         </div>
         <div id="preset-menu" class="hidden" v-cloak>
-            <div class="preset-panel" v-if="open">
-                <div class="preset-header">
-                    <div class="preset-title">{{ t('preset_title', 'HUD Preset') }}</div>
-                    <div class="preset-subtitle">{{ t('preset_subtitle', 'Layout Presets') }}</div>
+            <div class="preset-panel settings-panel" v-if="open" ref="panel" :class="{ moved: !!pos, moving }" :style="panelStyle">
+                <div class="preset-header settings-drag" @mousedown="startMove" @dblclick="centerPanel" :title="t('set_drag_hint', 'Drag to move · double-click to centre')">
+                    <span class="drag-grip"><i class="fa-solid fa-up-down-left-right"></i></span>
+                    <div class="preset-title">{{ t('settings_title', 'HUD Settings') }}</div>
+                    <div class="preset-subtitle">{{ t('settings_subtitle', 'Customise your HUD') }}</div>
                     <button class="circle-btn preset-close" @click="cancel"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="ornament-divider"><span>&#10022;</span></div>
 
-                <div class="preset-section">
-                    <div class="preset-label">{{ t('preset_size', 'Icon Size') }}</div>
-                    <div class="preset-options cols-3">
-                        <button v-for="s in sizes" :key="s" class="preset-opt" :class="{ active: preset.size === s }" @click="pick('size', s)">
-                            <span class="size-dot" :class="'dot-' + s"></span>{{ t('preset_size_' + s, s) }}
-                        </button>
-                    </div>
+                <div class="settings-tabs">
+                    <button v-for="tb in tabs" :key="tb.key" class="settings-tab" :class="{ active: tab === tb.key }" @click="tab = tb.key">
+                        <i class="fa-solid" :class="tb.icon"></i><span>{{ t('tab_' + tb.key, tb.key) }}</span>
+                    </button>
                 </div>
 
-                <div class="preset-section">
-                    <div class="preset-label">{{ t('preset_align', 'Position') }}</div>
-                    <div class="preset-screen">
-                        <button v-for="a in aligns" :key="a" class="screen-spot" :class="['spot-' + a, { active: preset.align === a }]" @click="pick('align', a)" :title="t('preset_align_' + a.replace('-', '_'), a)">
-                            <span class="spot-bar" :class="preset.orientation"></span>
-                        </button>
-                    </div>
-                    <div class="preset-current">{{ t('preset_align_' + preset.align.replace('-', '_'), preset.align) }}</div>
-                </div>
-
-                <div class="preset-section">
-                    <div class="preset-label">{{ t('preset_orientation', 'Layout') }}</div>
-                    <div class="preset-options cols-2">
-                        <button v-for="o in orientations" :key="o" class="preset-opt" :class="{ active: preset.orientation === o }" @click="pick('orientation', o)">
-                            <i class="fa-solid" :class="o === 'horizontal' ? 'fa-grip' : 'fa-grip-vertical'"></i>{{ t('preset_orient_' + o, o) }}
-                        </button>
-                    </div>
-                </div>
-
-                <div class="preset-section">
-                    <div class="preset-label">{{ t('preset_offset', 'Fine Position') }}</div>
-                    <div class="offset-box">
-                        <div class="arrow-pad">
-                            <span class="key k-up" :class="{ pressed: pressed === 'ArrowUp' }" @click="nudge(0, -1, false)"><i class="fa-solid fa-caret-up"></i></span>
-                            <span class="key k-left" :class="{ pressed: pressed === 'ArrowLeft' }" @click="nudge(-1, 0, false)"><i class="fa-solid fa-caret-left"></i></span>
-                            <span class="key k-down" :class="{ pressed: pressed === 'ArrowDown' }" @click="nudge(0, 1, false)"><i class="fa-solid fa-caret-down"></i></span>
-                            <span class="key k-right" :class="{ pressed: pressed === 'ArrowRight' }" @click="nudge(1, 0, false)"><i class="fa-solid fa-caret-right"></i></span>
+                <div class="settings-body">
+                    <!-- LAYOUT -->
+                    <template v-if="tab === 'layout'">
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('preset_size', 'Icon Size') }}</div>
+                            <div class="preset-options cols-3">
+                                <button v-for="s in sizes" :key="s" class="preset-opt" :class="{ active: preset.size === s }" @click="pick('size', s)">
+                                    <span class="size-dot" :class="'dot-' + s"></span>{{ t('preset_size_' + s, s) }}
+                                </button>
+                            </div>
                         </div>
-                        <div class="offset-readout">
-                            <div class="offset-val"><span>X</span><b :class="{ bump: bumpX }">{{ fmt(preset.offsetX) }}</b></div>
-                            <div class="offset-val"><span>Y</span><b :class="{ bump: bumpY }">{{ fmt(preset.offsetY) }}</b></div>
-                            <button class="wood-btn muted small" @click="resetOffset" :disabled="!preset.offsetX && !preset.offsetY">{{ t('preset_offset_reset', 'Reset') }}</button>
-                        </div>
-                    </div>
-                    <div class="preset-current">{{ t('preset_offset_hint', 'Arrow keys to move · Shift for bigger steps') }}</div>
-                </div>
 
-                <div class="preset-section">
-                    <div class="preset-label">{{ t('preset_visibility', 'Show Icons') }}</div>
-                    <div class="preset-options cols-3">
-                        <button v-for="k in hideable" :key="k.key" class="preset-opt vis-opt" :class="{ active: !preset.hidden[k.key] }" @click="toggleHidden(k.key)">
-                            <i class="fa-solid" :class="preset.hidden[k.key] ? 'fa-eye-slash' : 'fa-eye'"></i>{{ stripEmoji(t(k.label, k.key)) }}
-                        </button>
-                    </div>
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('preset_align', 'Position') }}</div>
+                            <div class="preset-screen">
+                                <button v-for="a in aligns" :key="a" class="screen-spot" :class="['spot-' + a, { active: preset.align === a }]" @click="pick('align', a)" :title="t('preset_align_' + a.replace('-', '_'), a)">
+                                    <span class="spot-bar" :class="preset.orientation"></span>
+                                </button>
+                            </div>
+                            <div class="preset-current">{{ t('preset_align_' + preset.align.replace('-', '_'), preset.align) }}</div>
+                        </div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('preset_orientation', 'Layout') }}</div>
+                            <div class="preset-options cols-2">
+                                <button v-for="o in orientations" :key="o" class="preset-opt" :class="{ active: preset.orientation === o }" @click="pick('orientation', o)">
+                                    <i class="fa-solid" :class="o === 'horizontal' ? 'fa-grip' : 'fa-grip-vertical'"></i>{{ t('preset_orient_' + o, o) }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('preset_offset', 'Fine Position') }}</div>
+                            <div class="offset-box">
+                                <div class="arrow-pad">
+                                    <span class="key k-up" :class="{ pressed: pressed === 'ArrowUp' }" @click="nudge(0, -1, false)"><i class="fa-solid fa-caret-up"></i></span>
+                                    <span class="key k-left" :class="{ pressed: pressed === 'ArrowLeft' }" @click="nudge(-1, 0, false)"><i class="fa-solid fa-caret-left"></i></span>
+                                    <span class="key k-down" :class="{ pressed: pressed === 'ArrowDown' }" @click="nudge(0, 1, false)"><i class="fa-solid fa-caret-down"></i></span>
+                                    <span class="key k-right" :class="{ pressed: pressed === 'ArrowRight' }" @click="nudge(1, 0, false)"><i class="fa-solid fa-caret-right"></i></span>
+                                </div>
+                                <div class="offset-readout">
+                                    <div class="offset-val"><span>X</span><b :class="{ bump: bumpX }">{{ fmt(preset.offsetX) }}</b></div>
+                                    <div class="offset-val"><span>Y</span><b :class="{ bump: bumpY }">{{ fmt(preset.offsetY) }}</b></div>
+                                    <button class="wood-btn muted small" @click="resetOffset" :disabled="!preset.offsetX && !preset.offsetY">{{ t('preset_offset_reset', 'Reset') }}</button>
+                                </div>
+                            </div>
+                            <div class="preset-current">{{ t('preset_offset_hint', 'Arrow keys to move · Shift for bigger steps') }}</div>
+                        </div>
+                    </template>
+
+                    <!-- ICONS -->
+                    <template v-if="tab === 'icons'">
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('preset_visibility', 'Show Icons') }}</div>
+                            <div class="preset-options cols-3">
+                                <button v-for="k in hideableList" :key="k.key" class="preset-opt vis-opt" :class="{ active: !preset.hidden[k.key] }" @click="toggleHidden(k.key)">
+                                    <i class="fa-solid" :class="preset.hidden[k.key] ? 'fa-eye-slash' : 'fa-eye'"></i>{{ stripEmoji(t(k.label, k.key)) }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="preset-section">
+                            <div class="set-row" @click="toggleDisplay('alwaysShow')">
+                                <span class="set-badge"><i class="fa-solid fa-thumbtack"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_always_show', 'Always Show Icons') }}</div><div class="set-desc">{{ t('set_always_show_desc', 'Keep icons on screen even when full') }}</div></div>
+                                <span class="switch" :class="{ on: d.alwaysShow }"><span class="knob"></span></span>
+                            </div>
+                        </div>
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('set_positions', 'Icon Positions') }}</div>
+                            <div class="set-row" @click="editIcons">
+                                <span class="set-badge"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_edit', 'Drag & Resize Icons') }}</div><div class="set-desc">{{ t('set_edit_desc', 'Saves, then lets you move each icon · ESC to finish') }}</div></div>
+                                <i class="fa-solid fa-chevron-right set-chev"></i>
+                            </div>
+                            <div class="set-row" @click="resetPositions">
+                                <span class="set-badge"><i class="fa-solid fa-rotate-left"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_reset_pos', 'Reset Icon Positions') }}</div><div class="set-desc" :class="{ done: resetDone }">{{ resetDone ? t('set_reset_done', 'Positions reset') : t('reset_hud_desc', 'All HUD positions reset to default') }}</div></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- DISPLAY -->
+                    <template v-if="tab === 'display'">
+                        <div class="preset-section">
+                            <div class="set-row" @click="toggleDisplay('showPct')">
+                                <span class="set-badge"><i class="fa-solid fa-percent"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_show_pct', 'Show Percentages') }}</div><div class="set-desc">{{ t('set_show_pct_desc', 'Values inside the circles') }}</div></div>
+                                <span class="switch" :class="{ on: d.showPct }"><span class="knob"></span></span>
+                            </div>
+                            <div class="set-row" v-if="voiceEnabled" @click="toggleDisplay('voiceAlways')">
+                                <span class="set-badge"><i class="fa-solid fa-microphone"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_voice_always', 'Voice Icon Always On') }}</div><div class="set-desc">{{ t('set_voice_always_desc', 'Off = only while talking') }}</div></div>
+                                <span class="switch" :class="{ on: d.voiceAlways }"><span class="knob"></span></span>
+                            </div>
+                            <div class="set-row" @click="toggleDisplay('money')">
+                                <span class="set-badge"><i class="fa-solid fa-money-bill"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('set_money', 'Money Pop-ups') }}</div><div class="set-desc">{{ t('set_money_desc', 'Cash, bloodmoney and bank changes') }}</div></div>
+                                <span class="switch" :class="{ on: d.money }"><span class="knob"></span></span>
+                            </div>
+                        </div>
+                        <div class="preset-section" v-for="sl in sliders" :key="sl.key">
+                            <div class="slider-head">
+                                <span class="preset-label">{{ t(sl.label, sl.key) }}</span>
+                                <b class="set-val">{{ d[sl.key] }}%</b>
+                            </div>
+                            <div class="slider-wrap">
+                                <button class="circle-btn small" @click="stepDisplay(sl.key, -1)"><i class="fa-solid fa-minus"></i></button>
+                                <div class="slider" @mousedown="startSlide($event, sl.key)">
+                                    <div class="slider-fill" :style="{ width: fillPct(sl.key) + '%' }"></div>
+                                    <div class="slider-knob" :style="{ left: fillPct(sl.key) + '%' }"></div>
+                                </div>
+                                <button class="circle-btn small" @click="stepDisplay(sl.key, 1)"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- MAP -->
+                    <template v-if="tab === 'map'">
+                        <div class="preset-section" v-for="m in mapRows" :key="m.key">
+                            <div class="preset-label"><i class="fa-solid" :class="m.icon"></i>&nbsp; {{ t(m.label, m.key) }}</div>
+                            <div class="preset-options cols-3">
+                                <button v-for="mode in mapModes" :key="mode.key" class="preset-opt" :class="{ active: d[m.key] === mode.key }" @click="setDisplay(m.key, mode.key)">
+                                    <i class="fa-solid" :class="mode.icon"></i>{{ t('map_' + mode.key, mode.key) }}
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- COLOURS -->
+                    <template v-if="tab === 'colors'">
+                        <div class="color-picker" v-if="picking">
+                            <div class="cp-head">
+                                <span class="cp-preview" :style="{ background: pickHex }"></span>
+                                <span class="cp-title">{{ pickerLabel() }}</span>
+                                <button class="circle-btn small" @click="picking = null"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="cp-sv" :style="{ background: 'hsl(' + hsv.h + ',100%,50%)' }" @mousedown="dragPick($event, 'sv')">
+                                <div class="cp-sv-white"></div><div class="cp-sv-black"></div>
+                                <div class="cp-sv-knob" :style="{ left: (hsv.s * 100) + '%', top: ((1 - hsv.v) * 100) + '%', background: pickHex }"></div>
+                            </div>
+                            <div class="cp-hue" @mousedown="dragPick($event, 'hue')">
+                                <div class="cp-hue-knob" :style="{ left: (hsv.h / 360 * 100) + '%' }"></div>
+                            </div>
+                            <div class="cp-swatches">
+                                <span v-for="sw in swatches" :key="sw" class="cp-swatch" :class="{ active: pickHex === sw }" :style="{ background: sw }" @click="pickSwatch(sw)"></span>
+                            </div>
+                            <div class="cp-row">
+                                <input class="cp-hex" v-model="hexInput" maxlength="7" spellcheck="false" @input="typeHex" @blur="hexInput = colorOf(picking).toUpperCase()">
+                                <button class="wood-btn muted small" @click="defaultPicked" :disabled="!isCustom(picking)">{{ t('col_default', 'Default') }}</button>
+                            </div>
+                        </div>
+                        <div class="preset-current" v-else>{{ t('col_pick_hint', 'Click a colour swatch to change it') }}</div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('col_rings', 'Ring Colours') }}</div>
+                            <div class="set-row static">
+                                <div class="ring-swatches">
+                                    <div v-for="rk in ringKeys" :key="rk" class="ring-sw">
+                                        <span class="color-sw" :class="{ active: picking === 'ring.' + rk, custom: isCustom('ring.' + rk) }" :style="{ background: colorOf('ring.' + rk) }" @click="openPicker('ring.' + rk)"></span>
+                                        <span class="sw-label">{{ t('col_' + rk, rk) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('col_icons', 'Icon Colours') }}</div>
+                            <div class="set-row static color-row" v-for="ci in colorList" :key="ci.key">
+                                <span class="set-badge" :style="{ color: colorOf(ci.key + '.normal') }"><i class="fa-solid" :class="ci.icon"></i></span>
+                                <div class="set-text"><div class="set-name small">{{ stripEmoji(t(ci.label, ci.key)) }}</div></div>
+                                <div class="ring-sw">
+                                    <span class="color-sw" :class="{ active: picking === ci.key + '.normal', custom: isCustom(ci.key + '.normal') }" :style="{ background: colorOf(ci.key + '.normal') }" @click="openPicker(ci.key + '.normal')"></span>
+                                    <span class="sw-label">{{ t('col_normal', 'Normal') }}</span>
+                                </div>
+                                <div class="ring-sw">
+                                    <span class="color-sw" :class="{ active: picking === ci.key + '.alert', custom: isCustom(ci.key + '.alert') }" :style="{ background: colorOf(ci.key + '.alert') }" @click="openPicker(ci.key + '.alert')"></span>
+                                    <span class="sw-label">{{ t('col_alert', 'Alert') }}</span>
+                                </div>
+                                <button class="circle-btn small" :disabled="!hasCustom(ci.key)" @click="resetIconColors(ci.key)"><i class="fa-solid fa-rotate-left"></i></button>
+                            </div>
+                        </div>
+                        <button class="wood-btn muted full" @click="resetAllColors" :disabled="!Object.keys(d.colors).length">{{ t('col_reset_all', 'Reset All Colours') }}</button>
+                    </template>
                 </div>
 
                 <div class="preset-actions">

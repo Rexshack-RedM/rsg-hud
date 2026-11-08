@@ -8,7 +8,7 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 - **Dead eye and horse bonding icons** (`Config.ShowDeadEye`, `Config.ShowHorseBonding`).
 - **Horse hunger and thirst icons** while mounted on your own active rsg-stables horse (`Config.ShowHorseNeeds`). Needs the `GetActiveHorseNeeds` client export in rsg-stables (see DOCS.md); hidden on borrowed/wild horses or when rsg-stables isn't running.
 - **Cold / heatstroke status** (with `Config.TempFeature`): the temperature icon switches to a snowflake/sun and pulses; the stamina core drains by `Config.TempStaminaDrain` first, and health is only hit once it's empty.
-- **Per-icon visibility** in `/hudpreset` (saved per player).
+- **HUD settings window** (`/hudsettings`): movable NUI to adjust every HUD feature per player (layout, icons, display, minimap).
 - **Bank balance** via `/bank`, using rsg-banking v3's total across all branches (falls back to the core `bank` money).
 
 ## Dependencies
@@ -27,25 +27,31 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 |---|---|
 | `/edithud` | Toggle edit mode (drag elements, resize with the corner handle, `ESC` to exit) |
 | `/resethud` | Reset all HUD positions and sizes |
-| `/togglehudpct` | Show/hide percentages under the circles (saved per player) |
-| `/hudpreset` | Open the HUD preset panel (see below) |
+| `/hudsettings` | Open the HUD settings window (see below), command name `Config.SettingsCommand` |
+| `/hudpreset` | Old name, opens the same window (`Config.PresetCommand`) |
+| `/togglehudpct` | Show/hide percentages in the circles (saved per player) |
 | `/cash` | Show cash balance |
 | `/bloodmoney` | Show bloodmoney balance |
 | `/bank` | Show total bank balance (rsg-banking v3), command name `Config.BankCommand` |
 
-Positions, sizes and the percentage toggle are saved in the player's NUI storage.
+Dragged positions/sizes are saved in the player's NUI storage; everything in the settings window is saved per player in client KVP.
 
-## HUD presets (`/hudpreset`)
-A NUI panel where each player picks:
-- **Icon size**: small / medium / large
-- **Position**: top or bottom, left / center / right (click a spot on the mini screen)
-- **Layout**: horizontal or vertical
-- **Show icons**: hide individual icons (they still appear in edit mode)
-- **Fine position**: nudge the whole HUD with the **arrow keys** (Shift = bigger steps), with a live X/Y readout
+## HUD settings window (`/hudsettings`)
+A movable NUI window (drag it by the title bar, double-click the title to re-centre; its spot is remembered) where each player adjusts every HUD feature:
 
-Changes preview live. `Enter` / **Apply** saves (client KVP, survives relogs); `Esc` / **Cancel** reverts.
-Applying a preset clears custom drag/resize of the stat icons (the money HUD keeps its spot).
-Server default: `Config.DefaultPreset` · command name: `Config.PresetCommand`.
+| Tab | Settings |
+|---|---|
+| **Layout** | Icon size (small/medium/large), screen position (click a spot on the mini screen), horizontal/vertical, fine position with the **arrow keys** (Shift = bigger steps) |
+| **Icons** | Show/hide each icon (incl. dead eye, horse bonding, horse hunger/thirst), *Always show icons* (even when full), **Drag & Resize Icons** (saves and enters edit mode), **Reset Icon Positions** |
+| **Display** | Percentages on/off, voice icon always on, money pop-ups on/off, HUD opacity slider, icon scale slider |
+| **Map** | Minimap / compass / off, separately for on foot and on horse/vehicle (only when `Config.AllowPlayerMinimap = true`) |
+| **Colours** | Colour picker (colour square, hue bar, swatches, hex input) for every icon's *normal* and *alert* colour, and for the ring colours (good / warning / low). Per-icon and reset-all buttons (only when `Config.AllowPlayerColors = true`) |
+
+Every change previews live. `Enter` / **Apply** saves (client KVP, survives relogs); `Esc` / **Cancel** / ✕ reverts.
+Only changing the *Layout* tab clears custom drag/resize of the stat icons; other settings keep them.
+Push-to-talk keeps working while the window or edit mode is open (`Config.AllowPushToTalkWhileOpen`, `Config.PushToTalkControls`).
+
+Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`, `Config.AllowPlayerMinimap`, `Config.AllowPlayerColors`, `Config.SettingsLimits` (min opacity, min/max scale). `Config.ShowPercentages`, `Config.VoiceAlwaysVisible`, `Config.IconColors` and the minimap options are the defaults for players who haven't changed them.
 
 ## Voice icon
 Disabled by default. Enable with `Config.ShowVoice = true`; `Config.VoiceAlwaysVisible` controls always-on vs only while talking.

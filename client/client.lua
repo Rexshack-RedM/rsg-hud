@@ -40,7 +40,12 @@ local localeKeys = {
     'preset_align_top_left', 'preset_align_top_center', 'preset_align_top_right',
     'preset_orient_horizontal', 'preset_orient_vertical',
     'preset_offset', 'preset_offset_hint', 'preset_offset_reset',
-    'deadeye_label', 'horse_bond_label', 'horse_hunger_label', 'horse_thirst_label', 'preset_visibility'
+    'deadeye_label', 'horse_bond_label', 'horse_hunger_label', 'horse_thirst_label', 'preset_visibility',
+    'settings_title', 'settings_subtitle', 'tab_layout', 'tab_icons', 'tab_display', 'tab_map',
+    'set_show_pct', 'set_show_pct_desc', 'set_always_show', 'set_always_show_desc', 'set_voice_always', 'set_voice_always_desc',
+    'set_money', 'set_money_desc', 'set_opacity', 'set_scale', 'set_map_foot', 'set_map_mount', 'map_off', 'map_map', 'map_compass',
+    'set_positions', 'set_edit', 'set_edit_desc', 'set_reset_pos', 'set_reset_done', 'set_drag_hint', 'set_saved',
+    'tab_colors', 'col_icons', 'col_rings', 'col_normal', 'col_alert', 'col_good', 'col_warn', 'col_bad', 'col_default', 'col_reset_all', 'col_pick_hint'
 }
 
 ------------------------------------------------
@@ -52,8 +57,10 @@ local VALID_PRESET = {
     align = { ['bottom-left'] = true, ['bottom-center'] = true, ['bottom-right'] = true, ['top-left'] = true, ['top-center'] = true, ['top-right'] = true },
     orientation = { horizontal = true, vertical = true },
 }
--- icons a player can hide from /hudpreset
-local HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true, horse = true }
+local LAYOUT_KEYS = { 'size', 'align', 'orientation', 'offsetX', 'offsetY' }
+local MAP_MODES = { off = true, map = true, compass = true }
+-- icons a player can hide from the settings panel
+local HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true, horse = true, horsebond = true, horsehunger = true, horsethirst = true }
 
 local function sanitiseHidden(list)
     local out = {}
@@ -69,7 +76,62 @@ local function clampOffset(v)
     return math.floor(math.max(-2000, math.min(2000, tonumber(v) or 0)))
 end
 
+local function clampInt(v, lo, hi, def)
+    v = tonumber(v)
+    if not v then return def end
+    return math.floor(math.max(lo, math.min(hi, v)) + 0.5)
+end
+
+-- server defaults for the per-player display settings
+local function defaultDisplay()
+    return {
+        showPct = Config.ShowPercentages == true,
+        alwaysShow = false,
+        voiceAlways = Config.VoiceAlwaysVisible ~= false,
+        money = true,
+        opacity = 100,
+        scale = 100,
+        mapFoot = Config.OnFootMinimap and 'map' or (Config.OnFootCompass and 'compass' or 'off'),
+        mapMount = Config.MountMinimap and (Config.MountCompass and 'compass' or 'map') or 'off',
+        colors = {},
+    }
+end
+
+-- player colour overrides: { ['health.normal'] = '#rrggbb', ['ring.good'] = '#rrggbb', ... }
+local function sanitiseColors(c)
+    local out, n = {}, 0
+    if type(c) ~= 'table' or not Config.AllowPlayerColors then return out end
+    for k, v in pairs(c) do
+        if type(k) == 'string' and type(v) == 'string' and #k <= 32 and k:match('^[%w_]+%.%a+$') and v:match('^#%x%x%x%x%x%x$') then
+            out[k] = v:lower()
+            n = n + 1
+            if n >= 64 then break end
+        end
+    end
+    return out
+end
+
+local function sanitiseDisplay(d)
+    local out = defaultDisplay()
+    if type(d) ~= 'table' then return out end
+    out.colors = sanitiseColors(d.colors)
+    for _, key in ipairs({ 'showPct', 'alwaysShow', 'voiceAlways', 'money' }) do
+        if type(d[key]) == 'boolean' then out[key] = d[key] end
+    end
+    local lim = Config.SettingsLimits or {}
+    out.opacity = clampInt(d.opacity, lim.minOpacity or 30, 100, out.opacity)
+    out.scale = clampInt(d.scale, lim.minScale or 70, lim.maxScale or 140, out.scale)
+    if Config.AllowPlayerMinimap then
+        if MAP_MODES[d.mapFoot] then out.mapFoot = d.mapFoot end
+        if MAP_MODES[d.mapMount] then out.mapMount = d.mapMount end
+    end
+    return out
+end
+
+local cachedPreset = nil
+
 local function getPreset()
+    if cachedPreset then return cachedPreset end
     local def = Config.DefaultPreset or {}
     local preset = { size = def.size or 'medium', align = def.align or 'bottom-center', orientation = def.orientation or 'horizontal', offsetX = 0, offsetY = 0 }
     local raw = GetResourceKvpString(PRESET_KVP)
@@ -83,7 +145,14 @@ local function getPreset()
         preset.hidden = sanitiseHidden(saved.hidden)
     end
     preset.hidden = preset.hidden or {}
+    preset.display = sanitiseDisplay(type(saved) == 'table' and saved.display or nil)
+    cachedPreset = preset
     return preset
+end
+
+local function storePreset(preset)
+    SetResourceKvp(PRESET_KVP, json.encode(preset))
+    cachedPreset = nil
 end
 
 local function sendPreset(clearCustom)
@@ -95,9 +164,12 @@ local function sendConfigToNUI()
     for _, key in ipairs(localeKeys) do
         locales[key] = locale(key)
     end
+    local lim = Config.SettingsLimits or {}
     SendNUIMessage({ action = 'setLocales', locales = locales })
-    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true, voiceAlwaysVisible = Config.VoiceAlwaysVisible, showPercentages = Config.ShowPercentages,
-        deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true, horseNeedsEnabled = Config.ShowHorseNeeds == true })
+    SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true,
+        deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true, horseNeedsEnabled = Config.ShowHorseNeeds == true,
+        allowMap = Config.AllowPlayerMinimap == true, allowColors = Config.AllowPlayerColors == true,
+        limits = { minOpacity = lim.minOpacity or 30, minScale = lim.minScale or 70, maxScale = lim.maxScale or 140 } })
     sendPreset(false)
 end
 
@@ -676,27 +748,28 @@ end)
 -- minimap
 ------------------------------------------------
 local lastInterior = nil
+local MAP_TYPE = { off = 0, map = 1, compass = 3 }
 
+-- uses each player's saved choice from the settings panel (server defaults from Config)
 CreateThread(function()
     while true do
         Wait(500)
         local mapType = 0
         local ped = PlayerPedId()
+        local d = getPreset().display
 
-        if IsPedOnMount(ped) or IsPedInAnyVehicle(ped, false) or LocalPlayer.state.telegramIsBirdPostApproaching then
-            if Config.MountMinimap and showUI then
-                mapType = Config.MountCompass and 3 or 1
-            end
-        elseif showUI then
-            if Config.OnFootMinimap then
-                mapType = 1
-                local inside = GetInteriorFromEntity(ped) ~= 0
-                if inside ~= lastInterior then
-                    lastInterior = inside
-                    SetRadarConfigType(inside and 0xDF5DB58C or 0x25B517BF, 0) -- zoom in inside interiors
+        if showUI then
+            if IsPedOnMount(ped) or IsPedInAnyVehicle(ped, false) or LocalPlayer.state.telegramIsBirdPostApproaching then
+                mapType = MAP_TYPE[d.mapMount] or 0
+            else
+                mapType = MAP_TYPE[d.mapFoot] or 0
+                if mapType == 1 then
+                    local inside = GetInteriorFromEntity(ped) ~= 0
+                    if inside ~= lastInterior then
+                        lastInterior = inside
+                        SetRadarConfigType(inside and 0xDF5DB58C or 0x25B517BF, 0) -- zoom in inside interiors
+                    end
                 end
-            elseif Config.OnFootCompass then
-                mapType = 3
             end
         end
 
@@ -733,14 +806,52 @@ end)
 -- hud edit mode
 ------------------------------------------------
 local presetOpen = false
+local uiFocus = false
+
+-- all NUI focus goes through here so push-to-talk keeps working while the UI is open
+local function applyNuiFocus(enable)
+    uiFocus = enable
+    if enable then
+        SetNuiFocus(true, true)
+        SetNuiFocusKeepInput(Config.AllowPushToTalkWhileOpen == true)
+    else
+        SetNuiFocusKeepInput(false)
+        SetNuiFocus(false, false)
+    end
+end
+
+local function runPttWhitelist()
+    DisableAllControlActions(0)
+    DisableAllControlActions(1)
+    DisableAllControlActions(2)
+    local list = Config.PushToTalkControls
+    if list then
+        for i = 1, #list do
+            local c = list[i]
+            EnableControlAction(0, c, true)
+            EnableControlAction(1, c, true)
+            EnableControlAction(2, c, true)
+        end
+    end
+end
+
+CreateThread(function()
+    while true do
+        if uiFocus and Config.AllowPushToTalkWhileOpen then
+            Wait(0)
+            runPttWhitelist()
+        else
+            Wait(250)
+        end
+    end
+end)
 
 local function setEditMode(enabled)
-    if enabled and presetOpen then return end -- preset panel owns NUI focus
+    if enabled and presetOpen then return end -- settings panel owns NUI focus
     if enabled == editMode then return end
     editMode = enabled
     SendNUIMessage({ action = 'toggleEditMode', enabled = enabled })
-    SetNuiFocus(enabled, enabled)
-    if enabled then SetNuiFocusKeepInput(false) end
+    applyNuiFocus(enabled)
 
     RSGCore.Functions.Notify({
         title = locale('edit_mode_on_title'),
@@ -759,7 +870,10 @@ RegisterCommand('edithud', function()
 end, false)
 
 RegisterCommand('togglehudpct', function()
-    SendNUIMessage({ action = 'togglePercentages' })
+    local preset = json.decode(json.encode(getPreset()))
+    preset.display.showPct = not preset.display.showPct
+    storePreset(preset)
+    sendPreset(false)
 end, false)
 
 RegisterCommand('resethud', function()
@@ -774,26 +888,51 @@ end, false)
 
 local function setPresetMenu(open)
     presetOpen = open
-    SetNuiFocus(open, open)
-    if open then SetNuiFocusKeepInput(false) end
+    applyNuiFocus(open)
     SendNUIMessage({ action = open and 'openPresetMenu' or 'closePresetMenu', preset = getPreset() })
 end
 
-RegisterCommand(Config.PresetCommand or 'hudpreset', function()
+local function toggleSettings()
     if editMode then return end
-    setPresetMenu(not presetOpen)
-end, false)
+    if presetOpen then
+        setPresetMenu(false)
+        sendPreset(false) -- revert any live preview
+    else
+        setPresetMenu(true)
+    end
+end
+
+local registered = {}
+for _, cmd in ipairs({ Config.SettingsCommand or 'hudsettings', Config.PresetCommand or 'hudpreset' }) do
+    if cmd and cmd ~= '' and not registered[cmd] then
+        registered[cmd] = true
+        RegisterCommand(cmd, toggleSettings, false)
+    end
+end
+
+exports('OpenSettings', function() if not presetOpen then toggleSettings() end end)
 
 RegisterNUICallback('savePreset', function(data, cb)
-    local preset = { size = data and data.size, align = data and data.align, orientation = data and data.orientation,
-        offsetX = clampOffset(data and data.offsetX), offsetY = clampOffset(data and data.offsetY), hidden = sanitiseHidden(data and data.hidden) }
+    data = type(data) == 'table' and data or {}
+    local preset = { size = data.size, align = data.align, orientation = data.orientation,
+        offsetX = clampOffset(data.offsetX), offsetY = clampOffset(data.offsetY),
+        hidden = sanitiseHidden(data.hidden), display = sanitiseDisplay(data.display) }
     for key, valid in pairs(VALID_PRESET) do
         if not valid[preset[key]] then cb('invalid') return end
     end
-    SetResourceKvp(PRESET_KVP, json.encode(preset))
+    -- only a layout change replaces custom drag/resize of the stat icons
+    local old, layoutChanged = getPreset(), false
+    for _, k in ipairs(LAYOUT_KEYS) do
+        if old[k] ~= preset[k] then layoutChanged = true break end
+    end
+    storePreset(preset)
     setPresetMenu(false)
-    sendPreset(true) -- a preset replaces any custom drag/resize of the stat icons
-    RSGCore.Functions.Notify({ title = locale('preset_title'), description = locale('preset_applied'), type = 'success', duration = 3000 })
+    sendPreset(layoutChanged)
+    if data.thenEdit then
+        setEditMode(true)
+    else
+        RSGCore.Functions.Notify({ title = locale('settings_title'), description = locale('set_saved'), type = 'success', duration = 3000 })
+    end
     cb('ok')
 end)
 
@@ -862,5 +1001,5 @@ AddEventHandler('onResourceStop', function(resource)
     setDamageFx(false)
     StopGameplayCamShaking(true)
     SetMinimapType(1)
-    if editMode or presetOpen then SetNuiFocus(false, false) end
+    if uiFocus then applyNuiFocus(false) end
 end)

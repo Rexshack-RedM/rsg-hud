@@ -32,3 +32,45 @@ rsg-hud only shows the values when `needs.entity` matches the horse you're ridin
 
 ### Locales
 `horse_hunger_label`, `horse_thirst_label` (all locale files).
+
+
+## HUD settings window
+Opened with `/hudsettings` (or `/hudpreset`), or from another script with `exports['rsg-hud']:OpenSettings()`.
+
+### Saved data (client KVP `rsghud_preset`)
+```lua
+{
+  size = 'medium', align = 'bottom-center', orientation = 'horizontal', offsetX = 0, offsetY = 0,
+  hidden = { health = true, horsebond = true, ... },  -- hideable keys: health stamina deadeye hunger thirst cleanliness stress temp voice mail outlaw horse horsebond horsehunger horsethirst
+  display = {
+    showPct = false, alwaysShow = false, voiceAlways = true, money = true,
+    opacity = 100,  -- Config.SettingsLimits.minOpacity..100
+    scale = 100,    -- Config.SettingsLimits.minScale..maxScale (multiplies the preset circle/badge size)
+    mapFoot = 'map', mapMount = 'map', -- 'off' | 'map' | 'compass' (player value only used when Config.AllowPlayerMinimap)
+    colors = { ['health.normal'] = '#4fa3e0', ['health.alert'] = '#c0392b', ['ring.good'] = '#6fbf73' }, -- only when Config.AllowPlayerColors
+  }
+}
+```
+Everything is sanitised client-side in `sanitiseDisplay` / `sanitiseHidden`; missing values fall back to Config. `/togglehudpct` now flips `display.showPct` in the KVP (the old `rsghud_showpct` localStorage value is no longer read).
+
+### NUI messages / callbacks
+| Name | Direction | Notes |
+|---|---|---|
+| `openPresetMenu` / `closePresetMenu` | Lua → NUI | carries `preset` |
+| `applyPreset` | Lua → NUI | applies layout classes, hidden icons and `display` (`applyDisplay`) |
+| `setConfig` | Lua → NUI | adds `allowMap`, `limits` |
+| `savePreset` | NUI → Lua | full preset; `thenEdit = true` saves then enters edit mode |
+| `closePresetMenu` | NUI → Lua | cancel, reverts the live preview |
+
+### Window position
+The settings window position is stored in NUI localStorage (`rsghud_settings_pos`) and clamped to the screen on open/resize.
+
+### NUI focus
+All focus goes through `applyNuiFocus`; while the settings window or edit mode has focus, game controls are disabled except `Config.PushToTalkControls`.
+
+### Locales
+`settings_title`, `settings_subtitle`, `tab_*`, `set_*`, `map_off`, `map_map`, `map_compass` (all locale files).
+
+### Colours
+Keys are `<icon>.normal` / `<icon>.alert` (icon keys as in `Config.IconColors`: health, stamina, deadeye, hunger, thirst, cleanliness, stress, temp, voice, mail, outlaw, horse_health, horse_stamina, horse_clean, horse_bond, horse_hunger, horse_thirst) and `ring.good` / `ring.warn` / `ring.bad`. *Alert* replaces the low/active/hasmail/cold colour. Only `#rrggbb` values are kept (max 64 entries); a colour equal to the server default isn't stored. Ring colours are applied as CSS variables `--ring-good/-warn/-bad` on `#ui-container`. The picker is pure HTML (no native `<input type="color">`).
+Locales: `tab_colors`, `col_*`.
