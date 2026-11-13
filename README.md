@@ -116,4 +116,4 @@ All setters return `true`/`false`. Server exports only push values to the player
 - With `Config.ServerNeeds = true`, other scripts keep using `hud:client:UpdateHunger/UpdateThirst` as before; large client-side jumps beyond the per-minute cap are reverted, so give big refills from the server with `exports['rsg-hud']:SetNeed(src, ...)`.
 
 ---
-Support: https://buymeacoffee.com/rexshack
+Support the Project : https://rexshack.tebex.store/
