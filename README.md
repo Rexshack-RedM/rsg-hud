@@ -107,7 +107,7 @@ All setters return `true`/`false`. Server exports only push values to the player
 - Minimap/compass behaviour on foot and mounted.
 
 ## Locales
-`locales/*.json`: en, de, el, es, fr, it, ja, nl, pl, pt-br, ro (handled by rsg-core). Set the language with `setr rsg:locale en`.
+`locales/*.json`: en, de, el, es, fr, it, ja, nl, pl, pt-br, ro, ru (handled by rsg-core). Set the language with `setr rsg:locale en`.
 
 ## Notes
 - No ox_lib dependency: locales, notifications and helpers come from rsg-core.
