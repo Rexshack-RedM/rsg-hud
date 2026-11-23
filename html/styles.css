@@ -276,6 +276,19 @@ body {
 .mini-badge.hasmail { border-color: var(--rdr-gold); color: var(--rdr-gold); filter: brightness(1.2); }
 .mini-badge.outlaw { border-color: var(--rdr-cost-over); color: var(--rdr-cost-over); }
 
+/* text badges: clock, compass, ammo, weapon condition (pill shape, same panel look as the round ones) */
+.mini-badge.badge-wide { border-radius: 18px; gap: 6px; padding: 0 10px; white-space: nowrap; color: var(--rdr-text); }
+.mini-badge .badge-text { font-weight: 600; letter-spacing: 0.5px; font-size: 0.95em; font-variant-numeric: tabular-nums; }
+.mini-badge .badge-text small { font-size: 0.8em; font-weight: 400; color: var(--rdr-muted); }
+.mini-badge.ammo-empty { border-color: var(--rdr-cost-over); }
+.mini-badge.ammo-empty .badge-text { color: var(--rdr-cost-over); }
+.mini-badge.cond-warn { border-color: var(--rdr-amber); }
+.mini-badge.cond-warn .badge-text, .mini-badge.cond-warn i { color: var(--rdr-amber); }
+.mini-badge.cond-bad { border-color: var(--rdr-cost-over); }
+.mini-badge.cond-bad .badge-text, .mini-badge.cond-bad i { color: var(--rdr-cost-over); }
+.mini-badge.wellfed { border-color: var(--rdr-cost-ok); }
+.mini-badge.horse-injury { border-color: var(--rdr-cost-over); color: var(--rdr-cost-over); animation: temp-pulse 1.4s ease-in-out infinite; }
+
 /* ============ ANIMATIONS ============ */
 
 .slide-fade-enter-active { transition: all 0.25s ease; }
@@ -423,6 +436,7 @@ body {
 #ui-container[class*="hud-size-"] .stat-row.stat-circle { width: var(--hud-circle); height: var(--hud-circle); flex-basis: var(--hud-circle); }
 #ui-container[class*="hud-size-"] .mini-badge.voice-inline { width: var(--hud-circle); height: var(--hud-circle); flex-basis: var(--hud-circle); }
 #ui-container[class*="hud-size-"] .mini-badge:not(.voice-inline) { width: var(--hud-badge); height: var(--hud-badge); font-size: calc(var(--hud-badge) * 0.38); }
+#ui-container[class*="hud-size-"] .mini-badge.badge-wide { width: auto; min-width: var(--hud-badge); }
 
 /* position */
 #ui-container[class*="hud-pos-"] { padding: 0 1.5vw; }
@@ -767,3 +781,11 @@ body {
     background: rgba(0,0,0,0.35); border: 1px solid var(--rdr-gold-dim); color: var(--rdr-text);
     font-family: 'Roboto', monospace; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; user-select: text; transition: all 0.15s ease; }
 .cp-hex:focus { border-color: var(--rdr-gold); box-shadow: 0 0 0 2px rgba(201,162,75,0.15); }
+
+/* ============ SHARE LAYOUT + COLOUR PALETTES (settings window) ============ */
+.share-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.share-input { flex: 1; min-width: 0; font-size: 11px; letter-spacing: 0; text-transform: none; }
+.share-msg { margin-top: 2px; }
+.share-msg.bad { color: var(--rdr-cost-over); }
+.pal-dots { display: inline-flex; gap: 3px; }
+.pal-dots i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.6); }

@@ -45,6 +45,9 @@ local localeKeys = {
     'set_show_pct', 'set_show_pct_desc', 'set_always_show', 'set_always_show_desc', 'set_voice_always', 'set_voice_always_desc',
     'set_money', 'set_money_desc', 'set_opacity', 'set_scale', 'set_ring_warn', 'set_ring_bad', 'set_map_foot', 'set_map_mount', 'map_off', 'map_map', 'map_compass',
     'set_positions', 'set_edit', 'set_edit_desc', 'set_reset_pos', 'set_reset_done', 'set_drag_hint', 'set_saved',
+    'clock_label', 'compass_label', 'ammo_label', 'weapon_label', 'wellfed_label', 'horse_injury_label', 'compass_dirs',
+    'set_palette', 'palette_default', 'palette_redgreen', 'palette_blueyellow',
+    'set_share', 'share_export', 'share_import', 'share_paste', 'share_exported', 'share_imported', 'share_invalid',
     'tab_colors', 'col_icons', 'col_rings', 'col_normal', 'col_alert', 'col_good', 'col_warn', 'col_bad', 'col_default', 'col_reset_all', 'col_pick_hint'
 }
 
@@ -59,8 +62,10 @@ local VALID_PRESET = {
 }
 local LAYOUT_KEYS = { 'size', 'align', 'orientation', 'offsetX', 'offsetY' }
 local MAP_MODES = { off = true, map = true, compass = true }
+local PALETTES = { default = true, redgreen = true, blueyellow = true } -- colourblind-safe ring palettes (colours live in the NUI)
 -- icons a player can hide from the settings panel
-local HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true, horse = true, horsebond = true, horsehunger = true, horsethirst = true }
+local HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true, horse = true, horsebond = true, horsehunger = true, horsethirst = true,
+    clock = true, compass = true, ammo = true, weapon = true, wellfed = true, horseinjury = true }
 
 local function sanitiseHidden(list)
     local out = {}
@@ -94,6 +99,7 @@ local function defaultDisplay()
         mapFoot = Config.OnFootMinimap and 'map' or (Config.OnFootCompass and 'compass' or 'off'),
         mapMount = Config.MountMinimap and (Config.MountCompass and 'compass' or 'map') or 'off',
         colors = {},
+        palette = 'default',
         ringWarn = clampInt(Config.RingWarnAt, 10, 95, 70), -- ring turns orange at or below this %
         ringBad = clampInt(Config.RingBadAt, 5, 90, 30),    -- ring turns red at or below this %
     }
@@ -117,6 +123,7 @@ local function sanitiseDisplay(d)
     local out = defaultDisplay()
     if type(d) ~= 'table' then return out end
     out.colors = sanitiseColors(d.colors)
+    if Config.AllowPlayerColors and PALETTES[d.palette] then out.palette = d.palette end
     for _, key in ipairs({ 'showPct', 'alwaysShow', 'voiceAlways', 'money' }) do
         if type(d[key]) == 'boolean' then out[key] = d[key] end
     end
@@ -133,6 +140,7 @@ local function sanitiseDisplay(d)
 end
 
 local cachedPreset = nil
+local serverDefault = nil -- layout an admin pushed with /pushhuddefault; used until the player saves their own
 
 local function getPreset()
     if cachedPreset then return cachedPreset end
@@ -140,6 +148,7 @@ local function getPreset()
     local preset = { size = def.size or 'medium', align = def.align or 'bottom-center', orientation = def.orientation or 'horizontal', offsetX = 0, offsetY = 0 }
     local raw = GetResourceKvpString(PRESET_KVP)
     local saved = raw and json.decode(raw)
+    if type(saved) ~= 'table' then saved = serverDefault end
     if type(saved) == 'table' then
         for key, valid in pairs(VALID_PRESET) do
             if valid[saved[key]] then preset[key] = saved[key] end
@@ -173,13 +182,26 @@ local function sendConfigToNUI()
     SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true,
         deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true, horseNeedsEnabled = Config.ShowHorseNeeds == true,
         allowMap = Config.AllowPlayerMinimap == true, allowColors = Config.AllowPlayerColors == true,
+        badges = { clock = Config.ShowClock == true, compass = Config.ShowCompass == true, ammo = Config.ShowAmmo == true, weapon = Config.ShowWeaponCondition == true,
+            horseinjury = Config.ShowHorseInjury == true, wellfed = Config.ServerNeeds == true and ((Config.DecayModifiers or {}).wellFed or {}).enabled == true and (Config.DecayModifiers or {}).enabled == true },
+        horseInjuredBelow = tonumber(Config.HorseInjuredBelow) or 25, clock24h = Config.Clock24h == true,
         limits = { minOpacity = lim.minOpacity or 30, minScale = lim.minScale or 70, maxScale = lim.maxScale or 140 } })
     sendPreset(false)
+end
+
+-- admin-pushed default layout (applies only while the player has no saved layout of their own)
+local function fetchDefaultLayout()
+    RSGCore.Functions.TriggerCallback('hud:server:getDefaultLayout', function(layout)
+        serverDefault = type(layout) == 'table' and layout or nil
+        cachedPreset = nil
+        if not GetResourceKvpString(PRESET_KVP) then sendPreset(false) end
+    end)
 end
 
 -- NUI tells us when it has loaded (avoids the old fixed Wait(1000) race)
 RegisterNUICallback('nuiReady', function(_, cb)
     sendConfigToNUI()
+    fetchDefaultLayout()
     cb('ok')
 end)
 
@@ -303,7 +325,7 @@ RegisterNetEvent('hud:client:RelieveStress', function(amount, serverApplied)
 end)
 
 local function getRangeValue(list, level, key, default)
-    for _, v in pairs(list) do
+    for _, v in ipairs(list) do -- ipairs: ranges share edges (60 is in two), so order must be deterministic
         if level >= v.min and level <= v.max then
             return v[key]
         end
@@ -531,6 +553,7 @@ end)
 -- warnings: low hunger/thirst + temperature status
 ------------------------------------------------
 local lowWarned = { hunger = false, thirst = false }
+local stressWarned = false
 
 checkLowNeeds = function(state)
     local limit = Config.LowNeedWarning or 0
@@ -539,9 +562,20 @@ checkLowNeeds = function(state)
         local v = state[key] or 100
         if v <= limit and not lowWarned[key] then
             lowWarned[key] = true
-            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('low_' .. key), type = 'warning', duration = 5000, id = 'rsghud_low_' .. key })
+            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('low_' .. key), type = 'warning', duration = 5000, id = 'rsghud_low_' .. key, sound = Config.WarningSound == true })
         elseif v > limit + 5 then
             lowWarned[key] = false -- hysteresis so it doesn't flicker on the boundary
+        end
+    end
+
+    local highStress = Config.HighStressWarning or 0
+    if highStress > 0 then
+        local stress = state.stress or 0
+        if stress >= highStress and not stressWarned then
+            stressWarned = true
+            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('high_stress'), type = 'warning', duration = 5000, id = 'rsghud_high_stress', sound = Config.WarningSound == true })
+        elseif stress < highStress - 5 then
+            stressWarned = false
         end
     end
 end
@@ -557,7 +591,7 @@ updateTempStatus = function()
     if tempStatus ~= lastTempStatus then
         lastTempStatus = tempStatus
         if tempStatus then
-            RSGCore.Functions.Notify({ title = locale('temp_status_title'), description = locale('temp_' .. tempStatus), type = 'warning', duration = 5000, id = 'rsghud_temp' })
+            RSGCore.Functions.Notify({ title = locale('temp_status_title'), description = locale('temp_' .. tempStatus), type = 'warning', duration = 5000, id = 'rsghud_temp', sound = Config.WarningSound == true })
         end
     end
 end
@@ -686,14 +720,19 @@ local function getHorseNeeds(horse)
            round(math.max(0, math.min(100, tonumber(needs.thirst) or 100)))
 end
 
+-- true while the HUD should be drawn (shared by every NUI feed below)
+local function hudAllowed()
+    return LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering()
+        and not LocalPlayer.state.isBathingActive and not LocalPlayer.state.inClothingStore
+        and not IsPauseMenuActive()
+end
+
 CreateThread(function()
     while true do
         Wait(500)
         local payload
 
-        if LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering()
-            and not LocalPlayer.state.isBathingActive and not LocalPlayer.state.inClothingStore
-            and not IsPauseMenuActive() then
+        if hudAllowed() then
 
             local ped = PlayerPedId()
             local mounted = IsPedOnMount(ped)
@@ -746,6 +785,9 @@ CreateThread(function()
                 tempStatus = tempStatus or false,
                 youhavemail = (LocalPlayer.state.telegramUnreadMessages or 0) > 0,
                 outlawstatus = outlawstatus,
+                wellfed = LocalPlayer.state.rsghud_wellfed == true,
+                hour = Config.ShowClock and GetClockHours() or nil,
+                minute = Config.ShowClock and GetClockMinutes() or nil,
             }
         else
             payload = { action = 'hudtick', show = false }
@@ -754,6 +796,123 @@ CreateThread(function()
         if not samePayload(lastPayload, payload) then
             lastPayload = payload
             SendNUIMessage(payload)
+        end
+    end
+end)
+
+------------------------------------------------
+-- activity / weather report for the server's decay modifiers
+-- (the server only ever uses these to make decay faster, never slower, so lying gains nothing)
+------------------------------------------------
+local NATIVE_IS_PED_SPRINTING = 0x57E457CD2C0FC168
+local NATIVE_IS_PED_RUNNING = 0xC5286FFC176F28A2
+
+local function nativeBool(hash, ped)
+    return Citizen.InvokeNative(hash, ped, Citizen.ResultAsInteger()) ~= 0
+end
+
+CreateThread(function()
+    local lastAct, lastEnv
+    while true do
+        Wait(1000)
+        local dm = Config.DecayModifiers
+        if Config.ServerNeeds and dm and dm.enabled and LocalPlayer.state.isLoggedIn then
+            local ped = PlayerPedId()
+            local act = 'idle'
+            if IsPedSwimming(ped) then
+                act = 'swim'
+            elseif IsPedOnMount(ped) then
+                local mount = GetMount(ped)
+                act = (mount ~= 0 and GetEntitySpeed(mount) > 8.0) and 'gallop' or 'mounted'
+            elseif nativeBool(NATIVE_IS_PED_SPRINTING, ped) then
+                act = 'sprint'
+            elseif nativeBool(NATIVE_IS_PED_RUNNING, ped) then
+                act = 'run'
+            end
+            local env = (tempC > Config.MaxTemp and 'hot') or (tempC < Config.MinTemp and 'cold') or 'none'
+
+            if act ~= lastAct then lastAct = act; LocalPlayer.state:set('rsghud_act', act, true) end
+            if env ~= lastEnv then lastEnv = env; LocalPlayer.state:set('rsghud_env', env, true) end
+        end
+    end
+end)
+
+-- "well fed" buff is decided by the server (state bag), we only tell the player when it changes
+local prevWellFed = nil
+local lastWellFedNotify = 0
+AddStateBagChangeHandler('rsghud_wellfed', ('player:%s'):format(GetPlayerServerId(PlayerId())), function(_, _, value)
+    if type(value) ~= 'boolean' then return end
+    if prevWellFed == nil then prevWellFed = value return end -- first value after login / restart: no notification
+    if value == prevWellFed then return end
+    prevWellFed = value
+    local now = GetGameTimer()
+    if now - lastWellFedNotify < 30000 then return end
+    lastWellFedNotify = now
+    RSGCore.Functions.Notify({
+        title = locale('wellfed_title'),
+        description = locale(value and 'wellfed_on' or 'wellfed_off'),
+        type = value and 'success' or 'inform',
+        duration = 4000,
+        id = 'rsghud_wellfed',
+    })
+end)
+
+------------------------------------------------
+-- compass bearing + weapon (ammo / condition), own faster feed
+------------------------------------------------
+CreateThread(function()
+    local lastHeading, lastCombat = nil, nil
+    while true do
+        local wantCompass = Config.ShowCompass == true
+        local wantCombat = Config.ShowAmmo == true or Config.ShowWeaponCondition == true
+        Wait((wantCompass or wantCombat) and 200 or 5000) -- nothing enabled: idle
+
+        if (wantCompass or wantCombat) and hudAllowed() then
+            local ped = PlayerPedId()
+
+            if wantCompass then
+                -- camera yaw is counter-clockwise, a compass bearing is clockwise; rounded to 2 degrees to keep the feed quiet
+                local heading = (math.floor(((360.0 - GetGameplayCamRot(2).z) % 360.0) / 2 + 0.5) * 2) % 360
+                if heading ~= lastHeading then
+                    lastHeading = heading
+                    SendNUIMessage({ action = 'compass', heading = heading })
+                end
+            end
+
+            if wantCombat then
+                local combat = { action = 'combat', armed = false, hasAmmo = false, clip = 0, reserve = 0 }
+                local _, weapon = GetCurrentPedWeapon(ped, true, 0, true)
+                if weapon and weapon ~= UNARMED then
+                    combat.armed = true
+
+                    if Config.ShowAmmo then
+                        local _, _, clip = pcall(GetAmmoInClip, ped, weapon)                -- BOOL GET_AMMO_IN_CLIP(ped, int* ammo, hash)
+                        local _, total = pcall(GetAmmoInPedWeapon, ped, weapon)              -- int GET_AMMO_IN_PED_WEAPON(ped, hash)
+                        local _, maxClip = pcall(GetMaxAmmoInClip, ped, weapon, true)        -- int GET_MAX_AMMO_IN_CLIP(ped, hash, p2)
+                        clip, total, maxClip = tonumber(clip) or 0, tonumber(total) or 0, tonumber(maxClip) or 0
+                        combat.hasAmmo = maxClip > 0 or total > 0
+                        combat.clip = clip
+                        combat.reserve = math.max(0, total - clip) -- total includes the loaded clip
+                    end
+
+                    if Config.ShowWeaponCondition then
+                        local okObj, obj = pcall(GetCurrentPedWeaponEntityIndex, ped, 0)     -- weapon object in the right hand
+                        if okObj and obj and obj ~= 0 and DoesEntityExist(obj) then
+                            local okDeg, degradation = pcall(GetWeaponDegradation, obj)      -- 0.0 good .. 1.0 poor
+                            if okDeg and tonumber(degradation) then
+                                combat.condition = clamp(round((1.0 - degradation) * 100), 0, 100)
+                            end
+                        end
+                    end
+                end
+                if not samePayload(lastCombat, combat) then
+                    lastCombat = combat
+                    SendNUIMessage(combat)
+                end
+            end
+        elseif lastCombat and lastCombat.armed then
+            lastCombat = { action = 'combat', armed = false, hasAmmo = false, clip = 0, reserve = 0 }
+            SendNUIMessage(lastCombat)
         end
     end
 end)
@@ -898,6 +1057,21 @@ RegisterCommand('resethud', function()
         type = 'success',
         duration = 3000
     })
+end, false)
+
+-- admin default layout: the server asks the admin's client for its current layout and validates it again
+RegisterNetEvent('hud:client:SendDefaultLayout', function()
+    TriggerServerEvent('hud:server:setDefaultLayout', getPreset())
+end)
+
+RegisterNetEvent('hud:client:DefaultLayoutChanged', fetchDefaultLayout)
+
+-- drops this player's own saved layout so the server default (or Config.DefaultPreset) applies again
+RegisterCommand('resethudlayout', function()
+    DeleteResourceKvp(PRESET_KVP)
+    cachedPreset = nil
+    sendPreset(true)
+    RSGCore.Functions.Notify({ title = locale('settings_title'), description = locale('layout_reset_done'), type = 'success', duration = 3000 })
 end, false)
 
 local function setPresetMenu(open)

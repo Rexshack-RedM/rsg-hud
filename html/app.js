@@ -22,8 +22,14 @@ function setHidden(list) {
 }
 
 // per-player display settings (from the saved preset, shared by the HUD + settings apps)
-const hudDisplay = Vue.reactive({ showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {}, ringWarn: 70, ringBad: 30 });
+const hudDisplay = Vue.reactive({ showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {}, palette: 'default', ringWarn: 70, ringBad: 30 });
 const RING_DEFAULTS = { good: '#6fbf73', warn: '#d9a441', bad: '#e0554f' };
+// colourblind-safe ring palettes (Okabe-Ito based); a player's own ring colours always win over these
+const PALETTES = {
+    default: RING_DEFAULTS,
+    redgreen: { good: '#56b4e9', warn: '#f0e442', bad: '#d55e00' },
+    blueyellow: { good: '#009e73', warn: '#f4a6c8', bad: '#cc3311' }
+};
 function applyDisplay(d) {
     Object.assign(hudDisplay, d || {});
     if (!hudDisplay.colors || Array.isArray(hudDisplay.colors)) hudDisplay.colors = {}; // lua sends [] for an empty table
@@ -33,8 +39,9 @@ function applyDisplay(d) {
     if (ui) {
         ui.style.opacity = op;
         ui.style.setProperty('--hud-scale', (Number(hudDisplay.scale) || 100) / 100);
+        const pal = PALETTES[hudDisplay.palette] || RING_DEFAULTS;
         Object.keys(RING_DEFAULTS).forEach(k => {
-            const v = hudDisplay.colors['ring.' + k];
+            const v = hudDisplay.colors['ring.' + k] || (pal !== RING_DEFAULTS ? pal[k] : null);
             if (v) ui.style.setProperty('--ring-' + k, v); else ui.style.removeProperty('--ring-' + k);
         });
     }
@@ -126,6 +133,9 @@ Vue.createApp({
             talking: false, youhavemail: false, outlawstatus: 0,
             deadeye: 0, horsebond: 0, tempStatus: false,
             deadeyeEnabled: false, bondEnabled: false, horseNeedsEnabled: false,
+            badges: {}, horseInjuredBelow: 25, clock24h: false,
+            hour: null, minute: null, heading: null, wellfed: false,
+            combat: { armed: false, hasAmmo: false, clip: 0, reserve: 0, condition: null },
             hidden: hudHidden
         };
     },
@@ -133,6 +143,8 @@ Vue.createApp({
         this.listener = ({ data }) => {
             switch (data.action) {
                 case 'hudtick': this.hudTick(data); break;
+                case 'combat': this.setCombat(data); break;
+                case 'compass': this.heading = Number(data.heading); break;
                 case 'toggleEditMode': this.editMode = data.enabled; break;
                 case 'setLocales': this.locales = data.locales; break;
                 case 'setConfig':
@@ -141,6 +153,9 @@ Vue.createApp({
                     this.deadeyeEnabled = data.deadeyeEnabled === true;
                     this.bondEnabled = data.bondEnabled === true;
                     this.horseNeedsEnabled = data.horseNeedsEnabled === true;
+                    this.badges = data.badges || {};
+                    this.horseInjuredBelow = Number(data.horseInjuredBelow) || 25;
+                    this.clock24h = data.clock24h === true;
                     break;
             }
         };
@@ -165,7 +180,13 @@ Vue.createApp({
                 horse: e || this.onHorse,
                 voice: this.voiceEnabled && (e || this.display.voiceAlways || this.talking),
                 mail: e || this.youhavemail,
-                outlaw: e || this.isOutlaw
+                outlaw: e || this.isOutlaw,
+                clock: !!this.badges.clock && (e || this.hour !== null),
+                compass: !!this.badges.compass && (e || this.heading !== null),
+                ammo: !!this.badges.ammo && (e || (this.combat.armed && this.combat.hasAmmo)),
+                weapon: !!this.badges.weapon && (e || (this.combat.armed && this.combat.condition !== null)),
+                wellfed: !!this.badges.wellfed && (e || this.wellfed),
+                horseinjury: !!this.badges.horseinjury && (e || (this.onHorse && this.horsehealth <= this.horseInjuredBelow))
             };
             // player-hidden icons stay hidden outside edit mode
             if (!e) Object.keys(h).forEach(k => { if (k in v) v[k] = false; });
@@ -176,6 +197,24 @@ Vue.createApp({
             return v;
         },
         isOutlaw() { return this.outlawstatus >= 100; },
+        clockText() {
+            if (this.hour === null) return '--:--';
+            const m = String(this.minute || 0).padStart(2, '0');
+            if (this.clock24h) return String(this.hour).padStart(2, '0') + ':' + m;
+            return ((this.hour % 12) || 12) + ':' + m + (this.hour >= 12 ? ' PM' : ' AM');
+        },
+        compassText() {
+            if (this.heading === null || Number.isNaN(this.heading)) return '---';
+            const dirs = String(this.locales.compass_dirs || 'N,NE,E,SE,S,SW,W,NW').split(',');
+            const name = (dirs.length === 8 ? dirs : ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])[Math.round(this.heading / 45) % 8];
+            return name + ' ' + String(Math.round(this.heading)).padStart(3, '0') + '\u00b0';
+        },
+        conditionClass() {
+            const c = this.combat.condition;
+            if (c === null) return '';
+            const bad = Number(this.display.ringBad) || LOW, warn = Number(this.display.ringWarn) || 70;
+            return c <= bad ? 'cond-bad' : c <= warn ? 'cond-warn' : '';
+        },
         tempValue() { return parseFloat(this.temp) || 0; },
         isFahrenheit() { return String(this.temp).includes('F'); },
         tempCelsius() { return this.isFahrenheit ? (this.tempValue - 32) * 5 / 9 : this.tempValue; },
@@ -215,9 +254,19 @@ Vue.createApp({
             const c = this.iconColors[key] || {};
             return alert ? (c.low || c.active || c.hasmail || DEFAULT_COLORS.low) : (c.normal || DEFAULT_COLORS.normal);
         },
+        setCombat(d) {
+            this.combat = {
+                armed: d.armed === true, hasAmmo: d.hasAmmo === true,
+                clip: Number(d.clip) || 0, reserve: Number(d.reserve) || 0,
+                condition: typeof d.condition === 'number' ? d.condition : null
+            };
+        },
         hudTick(data) {
             this.show = data.show;
             if (!data.show) return; // hidden ticks carry no stats
+            this.wellfed = data.wellfed === true;
+            this.hour = typeof data.hour === 'number' ? data.hour : null;
+            this.minute = typeof data.minute === 'number' ? data.minute : null;
             this.health = data.health;
             this.stamina = parseInt(data.stamina) || 0;
             this.hunger = data.hunger;
@@ -464,6 +513,10 @@ const COLOR_ICONS = [
 ];
 const COLOR_SWATCHES = ['#ffffff', '#f2f2f2', '#9a9a9a', '#5a5a5a', '#e0554f', '#c0392b', '#d9a441', '#f1c40f', '#6fbf73', '#5a7d4f', '#4fa3e0', '#2e6da4', '#9b6fe0', '#e07ab8', '#8b5a2b', '#000000'];
 const HEX_RE = /^#[0-9a-f]{6}$/i;
+const SHARE_PREFIX = 'RSGHUD1:';
+const b64encode = (str) => btoa(Array.from(new TextEncoder().encode(str), b => String.fromCharCode(b)).join(''));
+const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+const clampNum = (v, lo, hi, def) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, Math.round(v))) : def; };
 function hexToHsv(hex) {
     const n = parseInt(hex.slice(1), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
     const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
@@ -487,6 +540,13 @@ Vue.createApp({
             colorIcons: COLOR_ICONS, swatches: COLOR_SWATCHES, ringKeys: ['good', 'warn', 'bad'],
             picking: null, hsv: { h: 0, s: 0, v: 1 }, hexInput: '',
             voiceEnabled: false, deadeyeEnabled: true, bondEnabled: true, horseNeedsEnabled: true,
+            clockEnabled: false, compassEnabled: false, ammoEnabled: false, weaponEnabled: false, wellfedEnabled: false, horseInjuryEnabled: false,
+            palettes: [
+                { key: 'default', colors: Object.values(PALETTES.default) },
+                { key: 'redgreen', colors: Object.values(PALETTES.redgreen) },
+                { key: 'blueyellow', colors: Object.values(PALETTES.blueyellow) }
+            ],
+            shareCode: '', importText: '', shareMsg: '', shareError: false,
             limits: { minOpacity: 30, minScale: 70, maxScale: 140 },
             sizes: ['small', 'medium', 'large'],
             aligns: ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'],
@@ -501,7 +561,10 @@ Vue.createApp({
                 { key: 'stress', label: 'stress_label' }, { key: 'temp', label: 'temp_label' }, { key: 'voice', label: 'voice_label', needs: 'voiceEnabled' },
                 { key: 'mail', label: 'mail_label' }, { key: 'outlaw', label: 'outlaw_label' }, { key: 'horse', label: 'horse_health_label' },
                 { key: 'horsebond', label: 'horse_bond_label', needs: 'bondEnabled' }, { key: 'horsehunger', label: 'horse_hunger_label', needs: 'horseNeedsEnabled' },
-                { key: 'horsethirst', label: 'horse_thirst_label', needs: 'horseNeedsEnabled' }
+                { key: 'horsethirst', label: 'horse_thirst_label', needs: 'horseNeedsEnabled' },
+                { key: 'clock', label: 'clock_label', needs: 'clockEnabled' }, { key: 'compass', label: 'compass_label', needs: 'compassEnabled' },
+                { key: 'ammo', label: 'ammo_label', needs: 'ammoEnabled' }, { key: 'weapon', label: 'weapon_label', needs: 'weaponEnabled' },
+                { key: 'wellfed', label: 'wellfed_label', needs: 'wellfedEnabled' }, { key: 'horseinjury', label: 'horse_injury_label', needs: 'horseInjuryEnabled' }
             ],
             pressed: null, bumpX: false, bumpY: false,
             pos: (typeof saved.x === 'number' && typeof saved.y === 'number') ? { x: saved.x, y: saved.y } : null,
@@ -528,6 +591,9 @@ Vue.createApp({
                 this.deadeyeEnabled = data.deadeyeEnabled === true;
                 this.bondEnabled = data.bondEnabled === true;
                 this.horseNeedsEnabled = data.horseNeedsEnabled === true;
+                const b = data.badges || {};
+                this.clockEnabled = b.clock === true; this.compassEnabled = b.compass === true; this.ammoEnabled = b.ammo === true;
+                this.weaponEnabled = b.weapon === true; this.wellfedEnabled = b.wellfed === true; this.horseInjuryEnabled = b.horseinjury === true;
                 if (data.limits) this.limits = { ...this.limits, ...data.limits };
                 if (!this.tabs.some(tb => tb.key === this.tab)) this.tab = 'layout';
             }
@@ -538,6 +604,7 @@ Vue.createApp({
                 this.preset = { ...this.preset, ...p, hidden: { ...(p.hidden || {}) }, display: disp };
                 this.picking = null;
                 this.resetDone = false;
+                this.shareCode = ''; this.importText = ''; this.shareMsg = ''; this.shareError = false;
                 this.open = true;
                 this.$nextTick(() => this.clampPos());
             }
@@ -620,7 +687,7 @@ Vue.createApp({
         // ---- colours ----
         defaultColor(slot) {
             const [key, part] = slot.split('.');
-            if (key === 'ring') return RING_DEFAULTS[part];
+            if (key === 'ring') return (PALETTES[this.d.palette] || RING_DEFAULTS)[part];
             const c = this.iconColors[key] || {};
             return part === 'alert' ? (c.low || c.active || c.hasmail || c.cold || '#e0554f') : (c.normal || '#ffffff');
         },
@@ -721,6 +788,62 @@ Vue.createApp({
             if (e && e.target.closest('button')) return;
             this.pos = null;
             safeStorage.set(SETTINGS_POS_KEY, {});
+        },
+        // ---- share layout (copy / paste code) ----
+        exportCode() {
+            const p = this.preset;
+            const data = { size: p.size, align: p.align, orientation: p.orientation, offsetX: p.offsetX || 0, offsetY: p.offsetY || 0, hidden: p.hidden, display: this.d };
+            this.shareCode = SHARE_PREFIX + b64encode(JSON.stringify(data));
+            this.shareError = false;
+            this.shareMsg = '';
+            this.$nextTick(() => {
+                const el = this.$refs.shareOut;
+                if (!el) return;
+                el.focus(); el.select();
+                try { document.execCommand('copy'); } catch (e) { /* clipboard blocked: the code stays selected for Ctrl+C */ }
+                this.shareMsg = this.t('share_exported', 'Layout code ready, copy it and share it');
+            });
+        },
+        importCode() {
+            const raw = this.importText.trim();
+            try {
+                if (!raw.startsWith(SHARE_PREFIX) || raw.length > 4000) throw new Error('prefix');
+                const data = JSON.parse(b64decode(raw.slice(SHARE_PREFIX.length)));
+                if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('shape');
+                if (!this.sizes.includes(data.size) || !this.aligns.includes(data.align) || !this.orientations.includes(data.orientation)) throw new Error('enum');
+
+                const known = new Set(this.hideable.map(k => k.key));
+                const hidden = {};
+                if (data.hidden && typeof data.hidden === 'object') Object.keys(data.hidden).forEach(k => { if (known.has(k) && data.hidden[k] === true) hidden[k] = true; });
+
+                const src = (data.display && typeof data.display === 'object') ? data.display : {};
+                const disp = { ...this.preset.display };
+                ['showPct', 'alwaysShow', 'voiceAlways', 'money'].forEach(k => { if (typeof src[k] === 'boolean') disp[k] = src[k]; });
+                disp.opacity = clampNum(src.opacity, this.limits.minOpacity || 30, 100, disp.opacity);
+                disp.scale = clampNum(src.scale, this.limits.minScale || 70, this.limits.maxScale || 140, disp.scale);
+                disp.ringBad = clampNum(src.ringBad, 5, 90, disp.ringBad);
+                disp.ringWarn = clampNum(src.ringWarn, disp.ringBad + 5, 95, Math.max(disp.ringWarn, disp.ringBad + 5));
+                if (this.allowMap) ['mapFoot', 'mapMount'].forEach(k => { if (['off', 'map', 'compass'].includes(src[k])) disp[k] = src[k]; });
+                if (this.allowColors) {
+                    if (PALETTES[src.palette]) disp.palette = src.palette;
+                    const colors = {};
+                    if (src.colors && typeof src.colors === 'object' && !Array.isArray(src.colors)) {
+                        Object.keys(src.colors).slice(0, 64).forEach(k => { if (/^[\w]+\.[A-Za-z]+$/.test(k) && k.length <= 32 && HEX_RE.test(src.colors[k])) colors[k] = String(src.colors[k]).toLowerCase(); });
+                    }
+                    disp.colors = colors;
+                }
+
+                const next = { ...this.preset, size: data.size, align: data.align, orientation: data.orientation,
+                    offsetX: clampNum(data.offsetX, -2000, 2000, 0), offsetY: clampNum(data.offsetY, -2000, 2000, 0), hidden, display: disp };
+                this.preset = next;
+                applyPresetClasses(next); setHidden(hidden); applyDisplay(disp); // live preview, saved with Apply
+                this.importText = '';
+                this.shareError = false;
+                this.shareMsg = this.t('share_imported', 'Layout imported, press Apply to keep it');
+            } catch (e) {
+                this.shareError = true;
+                this.shareMsg = this.t('share_invalid', 'That layout code is not valid');
+            }
         },
         // ---- layout offset ----
         stripEmoji(s) { return String(s).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim(); },

@@ -18,6 +18,30 @@ Config.MaxNeedGainPerMinute = 150 -- max hunger/thirst a client may add per minu
 Config.LowNeedWarning = 20       -- notify when hunger/thirst drops to this value (0 = off)
 Config.LowHealthHeartbeat = 25   -- play a heartbeat below this health % (0 = off)
 Config.HeartbeatSound = { name = 'Heartbeat', set = 'RDRO_Sniper_Tension_Sounds' } -- rdr3_discoveries audio/frontend_soundsets
+Config.WarningSound = true       -- play rsg-core's warning notification sound with the low hunger / thirst and high stress warnings
+Config.HighStressWarning = 80    -- notify when stress reaches this value (0 = off)
+
+----------------------------------
+-- decay modifiers (needs Config.ServerNeeds = true)
+----------------------------------
+-- The client only reports what it is doing (running, swimming, hot/cold weather). The server picks the multiplier from
+-- this table and never lets a reported value go below 1.0, so a modified client can only make itself hungrier, not less hungry.
+Config.DecayModifiers = {
+    enabled = true,
+    maxMultiplier = 3.0, -- hunger/thirst decay can never be multiplied by more than this
+    activity = {         -- hunger and thirst decay multiplier while doing this
+        run = 1.25,
+        sprint = 2.0,
+        swim = 1.5,
+        gallop = 1.5,    -- riding fast
+    },
+    environment = {      -- uses Config.MinTemp / Config.MaxTemp (celsius), works even if Config.TempFeature is off
+        hot  = { thirst = 1.75, hunger = 1.0 },
+        cold = { thirst = 1.0,  hunger = 1.5 },
+    },
+    -- "well fed" buff: while hunger AND thirst are both at or above `minimum`, both fade slower (the server decides this)
+    wellFed = { enabled = true, minimum = 80, decayMultiplier = 0.5 },
+}
 
 ----------------------------------
 -- stress settings
@@ -47,6 +71,17 @@ Config.HideHorseCourageNative = true
 Config.ShowDeadEye = true      -- deadeye core circle
 Config.ShowHorseBonding = true -- horse bonding level circle
 Config.ShowHorseNeeds = true   -- horse hunger + thirst circles (needs rsg-stables, own active horse only)
+
+----------------------------------
+-- extra badges (every player can still hide each one in /hudsettings > Icons)
+----------------------------------
+Config.ShowClock = true            -- in-game time badge (follows rsg-weather's synced clock)
+Config.Clock24h = false            -- true = 24 hour clock, false = 12 hour with AM/PM
+Config.ShowCompass = false         -- compass bearing badge, e.g. NE 045 (separate from the minimap compass mode)
+Config.ShowAmmo = true             -- ammo in clip / reserve while holding a firearm or bow
+Config.ShowWeaponCondition = true  -- condition % of the weapon in hand (0-100, from the game's weapon degradation)
+Config.ShowHorseInjury = true      -- injured horse badge while mounted and the horse's health is low
+Config.HorseInjuredBelow = 25      -- horse health % at or below which the injured badge shows
 
 ----------------------------------
 -- bank balance command (uses rsg-banking v3 total balance when started)
@@ -82,6 +117,11 @@ Config.AllowPushToTalkWhileOpen = true
 Config.PushToTalkControls = {
     0x4BC9DABB, -- INPUT_PUSH_TO_TALK
 }
+-- admin default layout: an admin sets their own layout with /pushhuddefault and it becomes the default for every player
+-- who has not saved a layout of their own (/clearhuddefault removes it, /resethudlayout drops your own saved layout)
+Config.AdminPermission = 'admin'
+Config.PushDefaultCommand = 'pushhuddefault'
+Config.ClearDefaultCommand = 'clearhuddefault'
 Config.DefaultPreset = {
     size = 'medium',          -- 'small' | 'medium' | 'large'
     align = 'bottom-center',  -- 'bottom-left' | 'bottom-center' | 'bottom-right' | 'top-left' | 'top-center' | 'top-right'

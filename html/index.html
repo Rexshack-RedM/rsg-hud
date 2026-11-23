@@ -49,6 +49,36 @@
                         <div class="resize-handle" v-show="editMode"></div>
                         <i class="fa-solid fa-mask"></i>
                     </div>
+                    <div class="mini-badge badge-wide draggable-element" data-element="clock" v-show="vis.clock">
+                        <div class="drag-handle" v-show="editMode">{{ locales.clock_label || 'Clock' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-regular fa-clock"></i><span class="badge-text">{{ clockText }}</span>
+                    </div>
+                    <div class="mini-badge badge-wide draggable-element" data-element="compass" v-show="vis.compass">
+                        <div class="drag-handle" v-show="editMode">{{ locales.compass_label || 'Compass' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-compass"></i><span class="badge-text">{{ compassText }}</span>
+                    </div>
+                    <div class="mini-badge badge-wide draggable-element" data-element="ammo" v-show="vis.ammo" :class="{ 'ammo-empty': combat.armed && combat.clip <= 0 }">
+                        <div class="drag-handle" v-show="editMode">{{ locales.ammo_label || 'Ammo' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-bullseye"></i><span class="badge-text">{{ combat.clip }}<small>/{{ combat.reserve }}</small></span>
+                    </div>
+                    <div class="mini-badge badge-wide draggable-element" data-element="weapon" v-show="vis.weapon" :class="conditionClass">
+                        <div class="drag-handle" v-show="editMode">{{ locales.weapon_label || 'Weapon' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-gun"></i><span class="badge-text">{{ combat.condition === null ? '--' : combat.condition + '%' }}</span>
+                    </div>
+                    <div class="mini-badge draggable-element wellfed" data-element="wellfed" v-show="vis.wellfed" :style="{ color: iconColor('wellfed', false) }">
+                        <div class="drag-handle" v-show="editMode">{{ locales.wellfed_label || 'Well Fed' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <div class="mini-badge draggable-element horse-injury" data-element="horseinjury" v-show="vis.horseinjury">
+                        <div class="drag-handle" v-show="editMode">{{ locales.horse_injury_label || 'Horse Injured' }}</div>
+                        <div class="resize-handle" v-show="editMode"></div>
+                        <i class="fa-solid fa-kit-medical"></i>
+                    </div>
                 </div>
 
                 <div id="stat-strip">
@@ -231,6 +261,19 @@
                             </div>
                             <div class="preset-current">{{ t('preset_offset_hint', 'Arrow keys to move · Shift for bigger steps') }}</div>
                         </div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('set_share', 'Share Layout') }}</div>
+                            <div class="share-row">
+                                <input class="cp-hex share-input" ref="shareOut" readonly :value="shareCode" @focus="$event.target.select()">
+                                <button class="wood-btn muted small" @click="exportCode">{{ t('share_export', 'Export') }}</button>
+                            </div>
+                            <div class="share-row">
+                                <input class="cp-hex share-input" v-model="importText" maxlength="4000" spellcheck="false" :placeholder="t('share_paste', 'Paste a layout code')" @keydown.enter.stop.prevent="importCode">
+                                <button class="wood-btn small" @click="importCode" :disabled="!importText.trim()">{{ t('share_import', 'Import') }}</button>
+                            </div>
+                            <div class="preset-current share-msg" :class="{ bad: shareError }" v-if="shareMsg">{{ shareMsg }}</div>
+                        </div>
                     </template>
 
                     <!-- ICONS -->
@@ -335,6 +378,15 @@
                             </div>
                         </div>
                         <div class="preset-current" v-else>{{ t('col_pick_hint', 'Click a colour swatch to change it') }}</div>
+
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('set_palette', 'Colour Palette') }}</div>
+                            <div class="preset-options cols-3">
+                                <button v-for="p in palettes" :key="p.key" class="preset-opt" :class="{ active: (d.palette || 'default') === p.key }" @click="setDisplay('palette', p.key)">
+                                    <span class="pal-dots"><i v-for="c in p.colors" :key="c" :style="{ background: c }"></i></span>{{ t('palette_' + p.key, p.key) }}
+                                </button>
+                            </div>
+                        </div>
 
                         <div class="preset-section">
                             <div class="preset-label">{{ t('col_rings', 'Ring Colours') }}</div>
