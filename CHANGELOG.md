@@ -2,6 +2,11 @@
 
 All notable changes to rsg-hud. Newest first.
 
+## 3.2.2
+
+### Added
+- Client export `AddWarmth(amount, duration)`: temporary body temperature change in °C for `duration` seconds (used by rsg-consume for hot soup / cold drinks).
+
 ## 3.2.1
 
 ### Documentation

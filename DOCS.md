@@ -188,6 +188,7 @@ Generated from the source of **rsg-hud 3.2.1**. Names, arguments and defaults be
 | Export | Arguments | File |
 |---|---|---|
 | `GetCurrentTemperature` | `` | `client/client.lua` |
+| `AddWarmth` | `amount, duration` | `client/client.lua`: temporary °C change (negative cools, clamped ±15) for `duration` seconds; returns `true` |
 | `GetOutlawStatus` | `` | `client/client.lua` |
 | `OpenSettings` | `` | `client/client.lua` |
 | `GetNeeds` | `` | `client/client.lua` |

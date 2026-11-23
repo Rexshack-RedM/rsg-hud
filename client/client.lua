@@ -466,13 +466,32 @@ local function getWarmth(ped)
     return total
 end
 
+-- temporary warmth from other resources (hot soup, cold drinks); negative values cool
+local extraWarmth = {}
+local function getExtraWarmth()
+    local now, total = GetGameTimer(), 0
+    for i = #extraWarmth, 1, -1 do
+        if extraWarmth[i].untilTime <= now then table.remove(extraWarmth, i) else total = total + extraWarmth[i].amount end
+    end
+    return total
+end
+
+---@param amount number degrees celsius added to the body temperature
+---@param duration number seconds it lasts
+exports('AddWarmth', function(amount, duration)
+    amount, duration = tonumber(amount), tonumber(duration)
+    if not amount or not duration or duration <= 0 then return false end
+    extraWarmth[#extraWarmth + 1] = { amount = math.max(-15, math.min(15, amount)), untilTime = GetGameTimer() + duration * 1000 }
+    return true
+end)
+
 CreateThread(function()
     while true do
         Wait(1000)
         if LocalPlayer.state.isLoggedIn then
             -- everything is calculated in celsius; fahrenheit is display only
             local ped = PlayerPedId()
-            tempC = GetTemperatureAtCoords(GetEntityCoords(ped)) + (Config.TempFeature and getWarmth(ped) or 0)
+            tempC = GetTemperatureAtCoords(GetEntityCoords(ped)) + (Config.TempFeature and getWarmth(ped) or 0) + getExtraWarmth()
 
             if Config.TempFormat == 'fahrenheit' then
                 temp = math.floor(tempC * 9 / 5 + 32)
