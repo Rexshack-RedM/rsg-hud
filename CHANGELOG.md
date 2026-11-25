@@ -2,6 +2,20 @@
 
 All notable changes to rsg-hud. Newest first.
 
+## 3.4.0
+
+### Added
+- **Features tab** in `/hudsettings`: each player can switch alerts (hunger & thirst, stress, temperature, well fed), sounds (warning sound, low health heartbeat, pain sounds) and screen effects (stress camera shake, flies, damage screen effect) on or off. A switch is only listed when the server config has that feature enabled, and a player can only turn things off, never on what the server disabled.
+- **HUD Visible** master switch and the `/togglehud` command (`Config.ToggleHudCommand`) to hide or show the whole HUD (icons, money pop-ups and minimap). Saved per player. Client export `ToggleHud`.
+- **All On / All Off** buttons in the Features tab and **Show All / Hide All** buttons in the Icons tab.
+- **Rebindable keys** (`Config.UseKeyMapping`): `Config.SettingsKey` (default `F9`) opens the settings window, `Config.ToggleHudKey` (unbound by default) toggles the HUD. Uses rsg-core `RegisterKey`, with a plain `RegisterKeyMapping` fallback for older rsg-core.
+- `Config.AllowPlayerFeatures` (default `true`): `false` removes the Features tab and the HUD toggle, server config only.
+- Admin default layout (`/pushhuddefault`) and share codes now carry the feature switches (never the HUD Visible switch).
+- 36 new locale keys in all 12 languages.
+
+### Notes
+- The stress effect at 100 stress (ragdoll and fade) is gameplay and cannot be switched off; only the camera shake can.
+
 ## 3.3.0
 
 ### Added

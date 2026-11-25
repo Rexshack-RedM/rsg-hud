@@ -48,6 +48,11 @@ local localeKeys = {
     'clock_label', 'compass_label', 'ammo_label', 'weapon_label', 'wellfed_label', 'horse_injury_label', 'compass_dirs',
     'set_palette', 'palette_default', 'palette_redgreen', 'palette_blueyellow',
     'set_share', 'share_export', 'share_import', 'share_paste', 'share_exported', 'share_imported', 'share_invalid',
+    'tab_features', 'feat_master', 'feat_master_desc', 'feat_group_general', 'feat_group_alerts', 'feat_group_sounds', 'feat_group_effects',
+    'feat_low_needs', 'feat_low_needs_desc', 'feat_stress_warn', 'feat_stress_warn_desc', 'feat_temp_warn', 'feat_temp_warn_desc',
+    'feat_wellfed_notice', 'feat_wellfed_notice_desc', 'feat_warning_sound', 'feat_warning_sound_desc', 'feat_heartbeat', 'feat_heartbeat_desc',
+    'feat_pain_sound', 'feat_pain_sound_desc', 'feat_stress_shake', 'feat_stress_shake_desc', 'feat_flies', 'feat_flies_desc',
+    'feat_damage_fx', 'feat_damage_fx_desc', 'feat_all_on', 'feat_all_off', 'icons_show_all', 'icons_hide_all',
     'tab_colors', 'col_icons', 'col_rings', 'col_normal', 'col_alert', 'col_good', 'col_warn', 'col_bad', 'col_default', 'col_reset_all', 'col_pick_hint'
 }
 
@@ -62,6 +67,8 @@ local VALID_PRESET = {
 }
 local LAYOUT_KEYS = { 'size', 'align', 'orientation', 'offsetX', 'offsetY' }
 local MAP_MODES = { off = true, map = true, compass = true }
+-- per-player on/off switches (/hudsettings > Features). They only ever turn OFF things the server config has enabled.
+local FEATURE_KEYS = { 'lowNeeds', 'stressWarn', 'tempWarn', 'wellFedNotice', 'warningSound', 'heartbeat', 'painSound', 'stressShake', 'flies', 'damageFx' }
 local PALETTES = { default = true, redgreen = true, blueyellow = true } -- colourblind-safe ring palettes (colours live in the NUI)
 -- icons a player can hide from the settings panel
 local HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true, horse = true, horsebond = true, horsehunger = true, horsethirst = true,
@@ -87,9 +94,27 @@ local function clampInt(v, lo, hi, def)
     return math.floor(math.max(lo, math.min(hi, v)) + 0.5)
 end
 
+local function defaultFeatures()
+    local f = {}
+    for _, key in ipairs(FEATURE_KEYS) do f[key] = true end
+    return f
+end
+
+local function sanitiseFeatures(list)
+    local out = defaultFeatures()
+    if type(list) == 'table' then
+        for _, key in ipairs(FEATURE_KEYS) do
+            if type(list[key]) == 'boolean' then out[key] = list[key] end
+        end
+    end
+    return out
+end
+
 -- server defaults for the per-player display settings
 local function defaultDisplay()
     return {
+        hudOn = true,
+        features = defaultFeatures(),
         showPct = Config.ShowPercentages == true,
         alwaysShow = false,
         voiceAlways = Config.VoiceAlwaysVisible ~= false,
@@ -123,6 +148,10 @@ local function sanitiseDisplay(d)
     local out = defaultDisplay()
     if type(d) ~= 'table' then return out end
     out.colors = sanitiseColors(d.colors)
+    if Config.AllowPlayerFeatures ~= false then
+        if type(d.hudOn) == 'boolean' then out.hudOn = d.hudOn end
+        out.features = sanitiseFeatures(d.features)
+    end
     if Config.AllowPlayerColors and PALETTES[d.palette] then out.palette = d.palette end
     for _, key in ipairs({ 'showPct', 'alwaysShow', 'voiceAlways', 'money' }) do
         if type(d[key]) == 'boolean' then out[key] = d[key] end
@@ -168,6 +197,18 @@ local function storePreset(preset)
     cachedPreset = nil
 end
 
+-- true unless the player switched this feature off in /hudsettings > Features
+local function featureOn(key)
+    if Config.AllowPlayerFeatures == false then return true end
+    local f = getPreset().display.features
+    return not f or f[key] ~= false
+end
+
+-- false while the player has hidden the whole HUD (/togglehud)
+local function hudOn()
+    return Config.AllowPlayerFeatures == false or getPreset().display.hudOn ~= false
+end
+
 local function sendPreset(clearCustom)
     SendNUIMessage({ action = 'applyPreset', preset = getPreset(), clearCustom = clearCustom == true })
 end
@@ -181,7 +222,19 @@ local function sendConfigToNUI()
     SendNUIMessage({ action = 'setLocales', locales = locales })
     SendNUIMessage({ action = 'setConfig', iconColors = Config.IconColors, voiceEnabled = Config.ShowVoice == true,
         deadeyeEnabled = Config.ShowDeadEye == true, bondEnabled = Config.ShowHorseBonding == true, horseNeedsEnabled = Config.ShowHorseNeeds == true,
-        allowMap = Config.AllowPlayerMinimap == true, allowColors = Config.AllowPlayerColors == true,
+        allowMap = Config.AllowPlayerMinimap == true, allowColors = Config.AllowPlayerColors == true, allowFeatures = Config.AllowPlayerFeatures ~= false,
+        features = {
+            lowNeeds = (Config.LowNeedWarning or 0) > 0,
+            stressWarn = true,
+            tempWarn = Config.TempFeature == true,
+            wellFedNotice = Config.ServerNeeds == true and ((Config.DecayModifiers or {}).wellFed or {}).enabled == true and (Config.DecayModifiers or {}).enabled == true,
+            warningSound = Config.WarningSound == true,
+            heartbeat = (Config.LowHealthHeartbeat or 0) > 0 and Config.HeartbeatSound ~= nil,
+            painSound = Config.DoHealthDamage == true and Config.DoHealthPainSound == true,
+            stressShake = true,
+            flies = Config.FlyEffect == true,
+            damageFx = Config.DoHealthDamage == true and Config.DoHealthDamageFx == true,
+        },
         badges = { clock = Config.ShowClock == true, compass = Config.ShowCompass == true, ammo = Config.ShowAmmo == true, weapon = Config.ShowWeaponCondition == true,
             horseinjury = Config.ShowHorseInjury == true, wellfed = Config.ServerNeeds == true and ((Config.DecayModifiers or {}).wellFed or {}).enabled == true and (Config.DecayModifiers or {}).enabled == true },
         horseInjuredBelow = tonumber(Config.HorseInjuredBelow) or 25, clock24h = Config.Clock24h == true,
@@ -310,7 +363,7 @@ local function updateStress(amount, isGain, serverApplied)
     -- throttle notifications so shooting/speeding doesn't spam the feed
     local key = isGain and 'gain' or 'relieve'
     local now = GetGameTimer()
-    if now - lastStressNotify[key] >= STRESS_NOTIFY_COOLDOWN then
+    if featureOn('stressWarn') and now - lastStressNotify[key] >= STRESS_NOTIFY_COOLDOWN then
         lastStressNotify[key] = now
         RSGCore.Functions.Notify({ title = locale(isGain and 'stress_gain' or 'stress_relief'), type = 'inform', duration = 4000 })
     end
@@ -373,7 +426,7 @@ CreateThread(function()
 
         if LocalPlayer.state.isLoggedIn and stress >= Config.MinimumStress and not isDead() then
             local intensity = getRangeValue(Config.Intensity['shake'], stress, 'intensity', 0.05)
-            ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', intensity)
+            if featureOn('stressShake') then ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', intensity) end
 
             if stress >= 100 then
                 local ped = PlayerPedId()
@@ -390,7 +443,7 @@ CreateThread(function()
                     DoScreenFadeOut(200)
                     Wait(1000)
                     DoScreenFadeIn(200)
-                    ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', intensity)
+                    if featureOn('stressShake') then ShakeGameplayCam('SMALL_EXPLOSION_SHAKE', intensity) end
                 end
             end
         end
@@ -557,23 +610,25 @@ local stressWarned = false
 
 checkLowNeeds = function(state)
     local limit = Config.LowNeedWarning or 0
-    if limit <= 0 then return end
-    for key in pairs(lowWarned) do
-        local v = state[key] or 100
-        if v <= limit and not lowWarned[key] then
-            lowWarned[key] = true
-            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('low_' .. key), type = 'warning', duration = 5000, id = 'rsghud_low_' .. key, sound = Config.WarningSound == true })
-        elseif v > limit + 5 then
-            lowWarned[key] = false -- hysteresis so it doesn't flicker on the boundary
+    local warnSound = Config.WarningSound == true and featureOn('warningSound')
+    if limit > 0 and featureOn('lowNeeds') then
+        for key in pairs(lowWarned) do
+            local v = state[key] or 100
+            if v <= limit and not lowWarned[key] then
+                lowWarned[key] = true
+                RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('low_' .. key), type = 'warning', duration = 5000, id = 'rsghud_low_' .. key, sound = warnSound })
+            elseif v > limit + 5 then
+                lowWarned[key] = false -- hysteresis so it doesn't flicker on the boundary
+            end
         end
     end
 
     local highStress = Config.HighStressWarning or 0
-    if highStress > 0 then
+    if highStress > 0 and featureOn('stressWarn') then
         local stress = state.stress or 0
         if stress >= highStress and not stressWarned then
             stressWarned = true
-            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('high_stress'), type = 'warning', duration = 5000, id = 'rsghud_high_stress', sound = Config.WarningSound == true })
+            RSGCore.Functions.Notify({ title = locale('low_need_title'), description = locale('high_stress'), type = 'warning', duration = 5000, id = 'rsghud_high_stress', sound = warnSound })
         elseif stress < highStress - 5 then
             stressWarned = false
         end
@@ -590,8 +645,8 @@ updateTempStatus = function()
     end
     if tempStatus ~= lastTempStatus then
         lastTempStatus = tempStatus
-        if tempStatus then
-            RSGCore.Functions.Notify({ title = locale('temp_status_title'), description = locale('temp_' .. tempStatus), type = 'warning', duration = 5000, id = 'rsghud_temp', sound = Config.WarningSound == true })
+        if tempStatus and featureOn('tempWarn') then
+            RSGCore.Functions.Notify({ title = locale('temp_status_title'), description = locale('temp_' .. tempStatus), type = 'warning', duration = 5000, id = 'rsghud_temp', sound = Config.WarningSound == true and featureOn('warningSound') })
         end
     end
 end
@@ -602,7 +657,7 @@ CreateThread(function()
     while true do
         local sleep = 2000
         local limit = Config.LowHealthHeartbeat or 0
-        if limit > 0 and snd and LocalPlayer.state.isLoggedIn and not isDead() then
+        if limit > 0 and snd and featureOn('heartbeat') and LocalPlayer.state.isLoggedIn and not isDead() then
             local ped = PlayerPedId()
             local maxHealth = GetEntityMaxHealth(ped)
             if maxHealth > 0 and GetEntityHealth(ped) / maxHealth * 100 <= limit then
@@ -618,9 +673,10 @@ local DOWNED_FX = 'MP_Downed'
 
 local function setDamageFx(active)
     local running = Citizen.InvokeNative(0x4A123E85D7C4CA0B, DOWNED_FX) -- AnimpostfxIsRunning
-    if active and Config.DoHealthDamageFx and not running then
+    local want = active and Config.DoHealthDamageFx and featureOn('damageFx')
+    if want and not running then
         Citizen.InvokeNative(0x4102732DF6B4005F, DOWNED_FX, 0, true) -- AnimpostfxPlay
-    elseif not active and running then
+    elseif not want and running then
         Citizen.InvokeNative(0xB4FD7446BAB2F394, DOWNED_FX) -- AnimpostfxStop
     end
 end
@@ -639,7 +695,7 @@ CreateThread(function()
             updateNeed('cleanliness', 100 - getDirt(ped))
 
             if Config.FlyEffect then
-                updateFlies(state.cleanliness or 100)
+                if featureOn('flies') then updateFlies(state.cleanliness or 100) else removeFlies() end
             end
 
             if Config.DoHealthDamage then
@@ -649,7 +705,7 @@ CreateThread(function()
                     hurt = true
                     -- hunger/thirst damage is random
                     SetEntityHealth(ped, math.max(0, GetEntityHealth(ped) - math.random(5, 10)))
-                    if Config.DoHealthPainSound then PlayPain(ped, 9, 1, true, true) end
+                    if Config.DoHealthPainSound and featureOn('painSound') then PlayPain(ped, 9, 1, true, true) end
                 end
 
                 local extreme = tempStatus ~= nil
@@ -667,7 +723,7 @@ CreateThread(function()
                 if extreme or dirty then
                     hurt = true
                     if dirty and not extreme then painType = 12 end
-                    if Config.DoHealthPainSound then
+                    if Config.DoHealthPainSound and featureOn('painSound') then
                         PlayPain(ped, painType, 1, true, true)
                     end
                     SetEntityHealth(ped, math.max(0, GetEntityHealth(ped) - Config.RemoveHealth))
@@ -722,7 +778,7 @@ end
 
 -- true while the HUD should be drawn (shared by every NUI feed below)
 local function hudAllowed()
-    return LocalPlayer.state.isLoggedIn and showUI and not IsCinematicCamRendering()
+    return LocalPlayer.state.isLoggedIn and showUI and hudOn() and not IsCinematicCamRendering()
         and not LocalPlayer.state.isBathingActive and not LocalPlayer.state.inClothingStore
         and not IsPauseMenuActive()
 end
@@ -845,6 +901,7 @@ AddStateBagChangeHandler('rsghud_wellfed', ('player:%s'):format(GetPlayerServerI
     if prevWellFed == nil then prevWellFed = value return end -- first value after login / restart: no notification
     if value == prevWellFed then return end
     prevWellFed = value
+    if not featureOn('wellFedNotice') then return end
     local now = GetGameTimer()
     if now - lastWellFedNotify < 30000 then return end
     lastWellFedNotify = now
@@ -931,7 +988,7 @@ CreateThread(function()
         local ped = PlayerPedId()
         local d = getPreset().display
 
-        if showUI then
+        if showUI and hudOn() then
             if IsPedOnMount(ped) or IsPedInAnyVehicle(ped, false) or LocalPlayer.state.telegramIsBirdPostApproaching then
                 mapType = MAP_TYPE[d.mapMount] or 0
             else
@@ -1099,6 +1156,47 @@ for _, cmd in ipairs({ Config.SettingsCommand or 'hudsettings', Config.PresetCom
 end
 
 exports('OpenSettings', function() if not presetOpen then toggleSettings() end end)
+
+------------------------------------------------
+-- show / hide the whole HUD (/togglehud, saved per player)
+------------------------------------------------
+local function toggleHud()
+    if Config.AllowPlayerFeatures == false or editMode or presetOpen then return end
+    local preset = json.decode(json.encode(getPreset()))
+    preset.display.hudOn = preset.display.hudOn == false -- flips: hidden -> shown, shown -> hidden
+    storePreset(preset)
+    sendPreset(false)
+    RSGCore.Functions.Notify({
+        title = locale('settings_title'),
+        description = preset.display.hudOn and locale('hud_toggle_on') or locale('hud_toggle_off', Config.ToggleHudCommand or 'togglehud'),
+        type = 'inform', duration = 3000, id = 'rsghud_toggle',
+    })
+end
+
+local toggleHudCommand = Config.ToggleHudCommand
+if toggleHudCommand and toggleHudCommand ~= '' then
+    RegisterCommand(toggleHudCommand, toggleHud, false)
+    TriggerEvent('chat:addSuggestion', '/' .. toggleHudCommand, locale('cmd_togglehud_help'))
+end
+
+exports('ToggleHud', toggleHud)
+
+------------------------------------------------
+-- rebindable keys (players change them in the game's key settings)
+------------------------------------------------
+local function registerKey(name, descKey, defaultKey, onPress)
+    if not Config.UseKeyMapping or defaultKey == nil then return end
+    if RSGCore.Functions.RegisterKey then
+        RSGCore.Functions.RegisterKey(name, locale(descKey), defaultKey, onPress)
+    else -- older rsg-core without RegisterKey: plain key mapping, ignored while a NUI has focus
+        RegisterCommand('+' .. name, function() if LocalPlayer.state.isLoggedIn and not uiFocus then onPress() end end, false)
+        RegisterCommand('-' .. name, function() end, false)
+        RegisterKeyMapping('+' .. name, locale(descKey), 'keyboard', defaultKey)
+    end
+end
+
+registerKey('rsghud_settings', 'key_settings', Config.SettingsKey, toggleSettings)
+registerKey('rsghud_toggle', 'key_toggle_hud', Config.ToggleHudKey, toggleHud)
 
 RegisterNUICallback('savePreset', function(data, cb)
     data = type(data) == 'table' and data or {}

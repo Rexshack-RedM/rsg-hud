@@ -207,6 +207,7 @@ local LAYOUT_ENUMS = {
 }
 local LAYOUT_HIDEABLE = { health = true, stamina = true, deadeye = true, hunger = true, thirst = true, cleanliness = true, stress = true, temp = true, voice = true, mail = true, outlaw = true,
     horse = true, horsebond = true, horsehunger = true, horsethirst = true, clock = true, compass = true, ammo = true, weapon = true, wellfed = true, horseinjury = true }
+local LAYOUT_FEATURES = { 'lowNeeds', 'stressWarn', 'tempWarn', 'wellFedNotice', 'warningSound', 'heartbeat', 'painSound', 'stressShake', 'flies', 'damageFx' }
 local LAYOUT_PALETTES = { default = true, redgreen = true, blueyellow = true }
 local LAYOUT_MAP = { off = true, map = true, compass = true }
 
@@ -241,7 +242,11 @@ local function sanitiseLayout(l)
         palette = LAYOUT_PALETTES[d.palette] and d.palette or 'default',
         mapFoot = LAYOUT_MAP[d.mapFoot] and d.mapFoot or nil, mapMount = LAYOUT_MAP[d.mapMount] and d.mapMount or nil,
         colors = {},
+        features = {},
     }
+    for _, key in ipairs(LAYOUT_FEATURES) do
+        display.features[key] = not (type(d.features) == 'table' and d.features[key] == false) -- only an explicit false turns one off
+    end
     if type(d.colors) == 'table' then
         local n = 0
         for k, v in pairs(d.colors) do

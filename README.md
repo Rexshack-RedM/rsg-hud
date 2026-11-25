@@ -1,5 +1,7 @@
 # rsg-hud
 
+**Version 3.4.0** · full technical reference in [DOCS.md](DOCS.md)
+
 Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thirst, cleanliness, stress, temperature, voice, mail and outlaw badges, horse health/stamina/cleanliness/bonding/hunger/thirst, a money pop-up, and a drag-and-resize edit mode.
 
 ## Features
@@ -12,7 +14,8 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 - **Dead eye and horse bonding icons** (`Config.ShowDeadEye`, `Config.ShowHorseBonding`).
 - **Horse hunger and thirst icons** while mounted on your own active rsg-stables horse (`Config.ShowHorseNeeds`). Needs the `GetActiveHorseNeeds` client export in rsg-stables (see DOCS.md); hidden on borrowed/wild horses or when rsg-stables isn't running.
 - **Cold / heatstroke status** (with `Config.TempFeature`): the temperature icon switches to a snowflake/sun and pulses; the stamina core drains by `Config.TempStaminaDrain` first, and health is only hit once it's empty.
-- **HUD settings window** (`/hudsettings`): movable NUI to adjust every HUD feature per player (layout, icons, display, minimap).
+- **HUD settings window** (`/hudsettings`, default key `F9`): movable NUI to adjust every HUD feature per player (layout, icons, features, display, minimap, colours).
+- **Feature switches** (`/hudsettings` > Features): every player can turn alerts, sounds and screen effects on or off, hide the whole HUD (`/togglehud`), and use *All On / All Off* and *Show All / Hide All* buttons. Only features the server has enabled are listed (`Config.AllowPlayerFeatures`).
 - **Bank balance** via `/bank`, using rsg-banking v3's total across all branches (falls back to the core `bank` money).
 
 ## Dependencies
@@ -33,6 +36,7 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 | `/resethud` | Reset all HUD positions and sizes |
 | `/hudsettings` | Open the HUD settings window (see below), command name `Config.SettingsCommand` |
 | `/hudpreset` | Old name, opens the same window (`Config.PresetCommand`) |
+| `/togglehud` | Show/hide the whole HUD (saved per player, `Config.ToggleHudCommand`, needs `Config.AllowPlayerFeatures`) |
 | `/togglehudpct` | Show/hide percentages in the circles (saved per player) |
 | `/resethudlayout` | Clear your own saved layout so the server default (or `Config.DefaultPreset`) applies again |
 | `/pushhuddefault` | Admin (`Config.AdminPermission`): make your current layout the default for players without a saved layout (`Config.PushDefaultCommand`) |
@@ -49,16 +53,18 @@ A movable NUI window (drag it by the title bar, double-click the title to re-cen
 | Tab | Settings |
 |---|---|
 | **Layout** | Icon size (small/medium/large), screen position (click a spot on the mini screen), horizontal/vertical, fine position with the **arrow keys** (Shift = bigger steps), **Share Layout** (export a code / paste one to import) |
-| **Icons** | Show/hide each icon (incl. dead eye, horse bonding, horse hunger/thirst, clock, compass, ammo, weapon condition, well fed, injured horse), *Always show icons* (even when full), **Drag & Resize Icons** (saves and enters edit mode), **Reset Icon Positions** |
+| **Icons** | **Show All / Hide All** buttons, show/hide each icon (incl. dead eye, horse bonding, horse hunger/thirst, clock, compass, ammo, weapon condition, well fed, injured horse), *Always show icons* (even when full), **Drag & Resize Icons** (saves and enters edit mode), **Reset Icon Positions** |
+| **Features** | **HUD Visible** master switch, **All On / All Off**, and a switch for each alert (hunger & thirst, stress, temperature, well fed), sound (warning sound, low health heartbeat, pain sounds) and screen effect (stress camera shake, flies, damage screen effect). A switch only appears when the server has that feature enabled in config; players can only turn things *off*, never on what the server disabled (only when `Config.AllowPlayerFeatures = true`) |
 | **Display** | Percentages on/off, voice icon always on, money pop-ups on/off, HUD opacity slider, icon scale slider, ring colour thresholds (when rings turn orange / red) |
 | **Map** | Minimap / compass / off, separately for on foot and on horse/vehicle (only when `Config.AllowPlayerMinimap = true`) |
 | **Colours** | Colourblind-safe ring **palettes** (default / red-green safe / blue-yellow safe), colour picker (colour square, hue bar, swatches, hex input) for every icon's *normal* and *alert* colour, and for the ring colours (good / warning / low). Per-icon and reset-all buttons (only when `Config.AllowPlayerColors = true`) |
 
 Every change previews live. `Enter` / **Apply** saves (client KVP, survives relogs); `Esc` / **Cancel** / ✕ reverts.
 Only changing the *Layout* tab clears custom drag/resize of the stat icons; other settings keep them.
+The settings window opens with `F9` and the HUD toggle key is unbound by default (`Config.SettingsKey`, `Config.ToggleHudKey`); both are rebindable in the game's key settings. Set `Config.UseKeyMapping = false` for commands only.
 Push-to-talk keeps working while the window or edit mode is open (`Config.AllowPushToTalkWhileOpen`, `Config.PushToTalkControls`).
 
-Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`, `Config.AllowPlayerMinimap`, `Config.AllowPlayerColors`, `Config.SettingsLimits` (min opacity, min/max scale), `Config.RingWarnAt` / `Config.RingBadAt` (default ring thresholds). `Config.ShowPercentages`, `Config.VoiceAlwaysVisible`, `Config.IconColors` and the minimap options are the defaults for players who haven't changed them.
+Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`, `Config.AllowPlayerMinimap`, `Config.AllowPlayerColors`, `Config.AllowPlayerFeatures`, `Config.ToggleHudCommand`, `Config.UseKeyMapping`, `Config.SettingsKey`, `Config.ToggleHudKey`, `Config.SettingsLimits` (min opacity, min/max scale), `Config.RingWarnAt` / `Config.RingBadAt` (default ring thresholds). `Config.ShowPercentages`, `Config.VoiceAlwaysVisible`, `Config.IconColors` and the minimap options are the defaults for players who haven't changed them.
 
 ### Share layout
 `Layout > Share Layout > Export` shows a code starting with `RSGHUD1:` (it is also copied when the game allows it). Paste someone else's code and press **Import** to preview it live; nothing is saved until you press **Apply**. Codes are validated: unknown icons, values and colours are dropped.

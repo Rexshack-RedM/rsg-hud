@@ -77,7 +77,7 @@ Config.ShowHorseNeeds = true   -- horse hunger + thirst circles (needs rsg-stabl
 ----------------------------------
 Config.ShowClock = true            -- in-game time badge (follows rsg-weather's synced clock)
 Config.Clock24h = false            -- true = 24 hour clock, false = 12 hour with AM/PM
-Config.ShowCompass = false         -- compass bearing badge, e.g. NE 045 (separate from the minimap compass mode)
+Config.ShowCompass = true          -- compass bearing badge, e.g. NE 045 (separate from the minimap compass mode)
 Config.ShowAmmo = true             -- ammo in clip / reserve while holding a firearm or bow
 Config.ShowWeaponCondition = true  -- condition % of the weapon in hand (0-100, from the game's weapon degradation)
 Config.ShowHorseInjury = true      -- injured horse badge while mounted and the horse's health is low
@@ -102,6 +102,13 @@ Config.SettingsCommand = 'hudsettings' -- opens the HUD settings window
 Config.PresetCommand = 'hudpreset'     -- old command name, opens the same window
 Config.AllowPlayerMinimap = true       -- let players choose minimap / compass / off (on foot + mounted); false = server Config only
 Config.AllowPlayerColors = true        -- let players recolour icons + rings with the colour picker; false = Config.IconColors only
+Config.AllowPlayerFeatures = true      -- let players turn alerts, sounds and screen effects on/off (/hudsettings > Features) and hide the whole HUD (/togglehud); false = server Config only
+Config.ToggleHudCommand = 'togglehud'  -- shows / hides the whole HUD for the player (saved per player)
+
+-- keys (default keys only, players can rebind them in the game's key settings; '' = unbound until the player binds one)
+Config.UseKeyMapping = true            -- true = rsg-core RegisterKey / RegisterKeyMapping, false = commands only
+Config.SettingsKey = 'F9'              -- opens the HUD settings window (Esc closes it)
+Config.ToggleHudKey = ''               -- shows / hides the whole HUD
 -- default ring colour thresholds (players can change these in /hudsettings > Display)
 Config.RingWarnAt = 70           -- ring turns orange at or below this %
 Config.RingBadAt = 30            -- ring turns red at or below this %

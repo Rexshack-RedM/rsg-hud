@@ -22,7 +22,7 @@ function setHidden(list) {
 }
 
 // per-player display settings (from the saved preset, shared by the HUD + settings apps)
-const hudDisplay = Vue.reactive({ showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {}, palette: 'default', ringWarn: 70, ringBad: 30 });
+const hudDisplay = Vue.reactive({ hudOn: true, features: {}, showPct: false, alwaysShow: false, voiceAlways: true, money: true, opacity: 100, scale: 100, mapFoot: 'map', mapMount: 'map', colors: {}, palette: 'default', ringWarn: 70, ringBad: 30 });
 const RING_DEFAULTS = { good: '#6fbf73', warn: '#d9a441', bad: '#e0554f' };
 // colourblind-safe ring palettes (Okabe-Ito based); a player's own ring colours always win over these
 const PALETTES = {
@@ -33,6 +33,12 @@ const PALETTES = {
 function applyDisplay(d) {
     Object.assign(hudDisplay, d || {});
     if (!hudDisplay.colors || Array.isArray(hudDisplay.colors)) hudDisplay.colors = {}; // lua sends [] for an empty table
+    if (!hudDisplay.features || Array.isArray(hudDisplay.features)) hudDisplay.features = {};
+    // whole HUD switched off by the player (/togglehud): hide it and the money pop-ups
+    ['ui-container', 'money-container'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('hud-off', hudDisplay.hudOn === false);
+    });
     const ui = document.getElementById('ui-container');
     const money = document.getElementById('money-container');
     const op = Math.max(0.1, Math.min(1, (Number(hudDisplay.opacity) || 100) / 100));
@@ -495,9 +501,29 @@ const SETTINGS_POS_KEY = 'rsghud_settings_pos';
 const SETTINGS_TABS = [
     { key: 'layout', icon: 'fa-table-cells-large' },
     { key: 'icons', icon: 'fa-eye' },
+    { key: 'features', icon: 'fa-toggle-on', needs: 'allowFeatures' },
     { key: 'display', icon: 'fa-sliders' },
     { key: 'map', icon: 'fa-compass', needs: 'allowMap' },
     { key: 'colors', icon: 'fa-palette', needs: 'allowColors' }
+];
+// per-player on/off switches; an item only shows when the server config has that feature enabled (see featuresAvail)
+const FEATURE_GROUPS = [
+    { label: 'feat_group_alerts', items: [
+        { key: 'lowNeeds', icon: 'fa-utensils', label: 'feat_low_needs', desc: 'feat_low_needs_desc' },
+        { key: 'stressWarn', icon: 'fa-brain', label: 'feat_stress_warn', desc: 'feat_stress_warn_desc' },
+        { key: 'tempWarn', icon: 'fa-temperature-half', label: 'feat_temp_warn', desc: 'feat_temp_warn_desc' },
+        { key: 'wellFedNotice', icon: 'fa-bowl-food', label: 'feat_wellfed_notice', desc: 'feat_wellfed_notice_desc' }
+    ] },
+    { label: 'feat_group_sounds', items: [
+        { key: 'warningSound', icon: 'fa-volume-high', label: 'feat_warning_sound', desc: 'feat_warning_sound_desc' },
+        { key: 'heartbeat', icon: 'fa-heart-pulse', label: 'feat_heartbeat', desc: 'feat_heartbeat_desc' },
+        { key: 'painSound', icon: 'fa-face-grimace', label: 'feat_pain_sound', desc: 'feat_pain_sound_desc' }
+    ] },
+    { label: 'feat_group_effects', items: [
+        { key: 'stressShake', icon: 'fa-wave-square', label: 'feat_stress_shake', desc: 'feat_stress_shake_desc' },
+        { key: 'flies', icon: 'fa-bug', label: 'feat_flies', desc: 'feat_flies_desc' },
+        { key: 'damageFx', icon: 'fa-burst', label: 'feat_damage_fx', desc: 'feat_damage_fx_desc' }
+    ] }
 ];
 const COLOR_ICONS = [
     { key: 'health', label: 'health_label', icon: 'fa-heart-pulse' }, { key: 'stamina', label: 'stamina_label', icon: 'fa-bolt' },
@@ -536,7 +562,7 @@ Vue.createApp({
             open: false,
             locales: {},
             tab: 'layout',
-            allowMap: true, allowColors: true, iconColors: {},
+            allowMap: true, allowColors: true, allowFeatures: true, featuresAvail: {}, iconColors: {},
             colorIcons: COLOR_ICONS, swatches: COLOR_SWATCHES, ringKeys: ['good', 'warn', 'bad'],
             picking: null, hsv: { h: 0, s: 0, v: 1 }, hexInput: '',
             voiceEnabled: false, deadeyeEnabled: true, bondEnabled: true, horseNeedsEnabled: true,
@@ -577,6 +603,10 @@ Vue.createApp({
         pickHex() { return hsvToHex(this.hsv.h, this.hsv.s, this.hsv.v); },
         hideableList() { return this.hideable.filter(k => !k.needs || this[k.needs]); },
         d() { return this.preset.display; },
+        featureGroups() {
+            return FEATURE_GROUPS.map(g => ({ ...g, items: g.items.filter(i => this.featuresAvail[i.key]) })).filter(g => g.items.length);
+        },
+        hudIsOn() { return this.preset.display.hudOn !== false; },
         panelStyle() { return this.pos ? { left: this.pos.x + 'px', top: this.pos.y + 'px' } : {}; }
     },
     mounted() {
@@ -586,6 +616,8 @@ Vue.createApp({
             else if (data.action === 'setConfig') {
                 this.allowMap = data.allowMap === true;
                 this.allowColors = data.allowColors === true;
+                this.allowFeatures = data.allowFeatures !== false;
+                this.featuresAvail = (data.features && !Array.isArray(data.features)) ? data.features : {};
                 this.iconColors = data.iconColors || {};
                 this.voiceEnabled = data.voiceEnabled === true;
                 this.deadeyeEnabled = data.deadeyeEnabled === true;
@@ -655,6 +687,23 @@ Vue.createApp({
             applyDisplay(this.preset.display); // live preview
         },
         toggleDisplay(key) { this.setDisplay(key, !this.preset.display[key]); },
+        // ---- features (alerts / sounds / effects) and whole-HUD switch ----
+        featureOn(key) { const f = this.preset.display.features || {}; return f[key] !== false; },
+        toggleFeature(key) { this.setFeatures({ ...(this.preset.display.features || {}), [key]: !this.featureOn(key) }); },
+        setAllFeatures(on) {
+            const f = { ...(this.preset.display.features || {}) };
+            this.featureGroups.forEach(g => g.items.forEach(i => { f[i.key] = on; }));
+            this.setFeatures(f);
+        },
+        setFeatures(f) { this.setDisplay('features', f); },
+        toggleHud() { this.setDisplay('hudOn', !this.hudIsOn); },
+        // ---- icons: show / hide everything at once ----
+        setAllIcons(show) {
+            const h = {};
+            if (!show) this.hideableList.forEach(k => { h[k.key] = true; });
+            this.preset.hidden = h;
+            setHidden(h); // live preview
+        },
         range(key) {
             if (key === 'ringWarn') return [10, 95];
             if (key === 'ringBad') return [5, 90];
@@ -819,6 +868,11 @@ Vue.createApp({
                 const src = (data.display && typeof data.display === 'object') ? data.display : {};
                 const disp = { ...this.preset.display };
                 ['showPct', 'alwaysShow', 'voiceAlways', 'money'].forEach(k => { if (typeof src[k] === 'boolean') disp[k] = src[k]; });
+                if (this.allowFeatures && src.features && typeof src.features === 'object' && !Array.isArray(src.features)) { // hudOn is never imported
+                    const f = { ...(disp.features || {}) };
+                    FEATURE_GROUPS.forEach(g => g.items.forEach(i => { if (typeof src.features[i.key] === 'boolean') f[i.key] = src.features[i.key]; }));
+                    disp.features = f;
+                }
                 disp.opacity = clampNum(src.opacity, this.limits.minOpacity || 30, 100, disp.opacity);
                 disp.scale = clampNum(src.scale, this.limits.minScale || 70, this.limits.maxScale || 140, disp.scale);
                 disp.ringBad = clampNum(src.ringBad, 5, 90, disp.ringBad);

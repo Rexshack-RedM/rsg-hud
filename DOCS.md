@@ -1,6 +1,6 @@
 # rsg-hud — Developer Docs
 
-**Version 3.3.0** · RSG Framework (rsg-core 3.x) · Lua 5.4 + Vue 3 NUI
+**Version 3.4.0** · RSG Framework (rsg-core 3.x) · Lua 5.4 + Vue 3 NUI
 
 Technical reference for server owners and developers. For a short overview and the player-facing feature list see [README.md](README.md).
 
@@ -111,6 +111,11 @@ rsg-hud/
 | `Config.PresetCommand` | `'hudpreset'` | old command name, opens the same window |
 | `Config.AllowPlayerMinimap` | `true` | let players choose minimap / compass / off (on foot + mounted); false = server Config only |
 | `Config.AllowPlayerColors` | `true` | let players recolour icons + rings with the colour picker; false = Config.IconColors only |
+| `Config.AllowPlayerFeatures` | `true` | let players turn alerts, sounds and effects on/off (Features tab) and hide the whole HUD (`/togglehud`); false = server Config only |
+| `Config.ToggleHudCommand` | `'togglehud'` | command that shows / hides the whole HUD (saved per player) |
+| `Config.UseKeyMapping` | `true` | register the rebindable keys below (rsg-core `RegisterKey`, falls back to `RegisterKeyMapping`); false = commands only |
+| `Config.SettingsKey` | `'F9'` | default key that opens the settings window (`Esc` closes it; keys are ignored while a NUI has focus). Players rebind it in the game's key settings, `''` = unbound |
+| `Config.ToggleHudKey` | `''` | default key that shows / hides the HUD (unbound by default, rebindable) |
 | `Config.RingWarnAt` | `70` | ring turns orange at or below this % |
 | `Config.RingBadAt` | `30` | ring turns red at or below this % |
 | `Config.SettingsLimits` | `{ minOpacity = 30, minScale = 70, maxScale = 140 }` | limits for the player sliders |
@@ -253,6 +258,7 @@ exports['rsg-hud']:ShowAccount(source, 'cash')
 | `SetHudVisible` / `IsHudVisible` | `visible` / none | none / `boolean` | hide the HUD for cutscenes, photo mode, etc. |
 | `ToggleEditMode` / `IsEditMode` | `enabled?` / none | none / `boolean` | `nil` toggles |
 | `OpenSettings` | none | none | opens `/hudsettings` |
+| `ToggleHud` | none | none | shows / hides the whole HUD for this player (same as `/togglehud`, ignored when `Config.AllowPlayerFeatures = false`) |
 
 ```lua
 -- client: hot drink warms the player for 2 minutes
@@ -317,7 +323,10 @@ end)
 | `/hudsettings` (`Config.SettingsCommand`), `/hudpreset` (`Config.PresetCommand`) | client | everyone | open / close the settings window |
 | `/edithud` | client | everyone | toggle drag and resize edit mode (`Esc` exits) |
 | `/resethud` | client | everyone | reset dragged positions and sizes |
+| `/togglehud` (`Config.ToggleHudCommand`) | client | everyone | show / hide the whole HUD, saved per player |
 | `/togglehudpct` | client | everyone | toggle percentages in the circles |
+| key `F9` (`Config.SettingsKey`) | client | everyone | open the settings window. Rebindable in the game's key settings, command name `rsghud_settings` |
+| key `Config.ToggleHudKey` | client | everyone | toggle the HUD, unbound by default, command name `rsghud_toggle` |
 | `/resethudlayout` | client | everyone | delete the player's saved layout so the server default (or `Config.DefaultPreset`) applies |
 | `/cash`, `/bloodmoney` | server | everyone | show that balance on the HUD |
 | `/bank` (`Config.BankCommand`) | server | everyone | show total bank balance (3 s cooldown) |
@@ -344,6 +353,9 @@ State bags rsg-hud only reads: `isLoggedIn`, `isBathingActive`, `inClothingStore
                                               -- mail outlaw horse horsebond horsehunger horsethirst clock compass ammo weapon wellfed horseinjury
   display = {
     showPct = false, alwaysShow = false, voiceAlways = true, money = true,
+    hudOn = true,                     -- false = whole HUD hidden by /togglehud (when Config.AllowPlayerFeatures)
+    features = { lowNeeds = true, stressWarn = true, tempWarn = true, wellFedNotice = true, warningSound = true, heartbeat = true,
+                 painSound = true, stressShake = true, flies = true, damageFx = true }, -- only an explicit false turns one off (when Config.AllowPlayerFeatures)
     opacity = 100,                    -- Config.SettingsLimits.minOpacity .. 100
     scale = 100,                      -- Config.SettingsLimits.minScale .. maxScale
     mapFoot = 'map', mapMount = 'map',-- 'off' | 'map' | 'compass' (used when Config.AllowPlayerMinimap)
@@ -353,10 +365,10 @@ State bags rsg-hud only reads: `isLoggedIn`, `isBathingActive`, `inClothingStore
   }
 }
 ```
-Everything is sanitised on load (`sanitiseDisplay`, `sanitiseHidden`) and again on every save from the NUI (`savePreset`). Missing values fall back to Config.
+Everything is sanitised on load (`sanitiseDisplay`, `sanitiseHidden`, `sanitiseFeatures`) and again on every save from the NUI (`savePreset`). Missing values fall back to Config.
 
 ### 9.3 Server resource KVP `rsghud_default_layout`
-JSON of the admin default layout, same shape as above, already sanitised by `sanitiseLayout`.
+JSON of the admin default layout, same shape as above, already sanitised by `sanitiseLayout`. It carries `display.features` but never `hudOn`, so a default layout cannot hide anyone's HUD.
 
 ### 9.4 NUI localStorage
 | Key | Content |
@@ -368,9 +380,29 @@ JSON of the admin default layout, same shape as above, already sanitised by `san
 ## 10. Features in detail
 
 ### 10.1 Settings window (`/hudsettings`)
-Movable NUI window (drag the title bar, double-click it to re-centre). Tabs: Layout, Icons, Display, Map (`Config.AllowPlayerMinimap`), Colours (`Config.AllowPlayerColors`). Every change previews live; Apply (`Enter`) saves, Cancel (`Esc`) reverts. Only changing the Layout tab clears custom drag/resize positions. From another script: `exports['rsg-hud']:OpenSettings()`.
+Movable NUI window (drag the title bar, double-click it to re-centre). Tabs: Layout, Icons, Features (`Config.AllowPlayerFeatures`), Display, Map (`Config.AllowPlayerMinimap`), Colours (`Config.AllowPlayerColors`). Every change previews live; Apply (`Enter`) saves, Cancel (`Esc`) reverts. Only changing the Layout tab clears custom drag/resize positions. From another script: `exports['rsg-hud']:OpenSettings()`.
 
 All NUI focus goes through `applyNuiFocus`. While the window or edit mode has focus, game controls are disabled except `Config.PushToTalkControls`, so push-to-talk keeps working (`Config.AllowPushToTalkWhileOpen`).
+
+### 10.1b Features tab and HUD toggle
+Per-player on/off switches stored in `display.features` plus the master `display.hudOn`. They are cosmetic and client-side only: the client calls `featureOn(key)` before it shows a notification, plays a sound or starts an effect, and `hudOn()` inside `hudAllowed()` and the minimap loop.
+
+| Switch | Gates | Listed only when |
+|---|---|---|
+| `lowNeeds` | low hunger / thirst notification | `Config.LowNeedWarning > 0` |
+| `stressWarn` | stress gain / relief / high stress notifications | always |
+| `tempWarn` | cold / heat notification | `Config.TempFeature` |
+| `wellFedNotice` | well fed gained / lost notification | `Config.ServerNeeds` and `Config.DecayModifiers.wellFed.enabled` |
+| `warningSound` | `Config.WarningSound` sound on the warnings above | `Config.WarningSound` |
+| `heartbeat` | low health heartbeat | `Config.LowHealthHeartbeat > 0` |
+| `painSound` | `PlayPain` groans from hunger, thirst, temperature, dirt | `Config.DoHealthDamage` and `Config.DoHealthPainSound` |
+| `stressShake` | stress camera shake (not the ragdoll / fade at 100 stress, that stays gameplay) | always |
+| `flies` | flies particle effect | `Config.FlyEffect` |
+| `damageFx` | `MP_Downed` screen effect | `Config.DoHealthDamage` and `Config.DoHealthDamageFx` |
+
+The switches only ever turn things off: damage, decay, stress gain and the well fed buff itself are server / config rules and are untouched. The server tells the NUI which switches exist through `setConfig.features`. *All On / All Off* only change the listed switches. `hudOn = false` hides the stat icons, badges, money pop-ups and the minimap (`.hud-off` class in the NUI, `hudAllowed()` in Lua) and is shown again with `/togglehud`, the toggle key or the **HUD Visible** switch. With `Config.AllowPlayerFeatures = false` the tab, the command effect and all saved switches are ignored.
+
+Keys: `Config.SettingsKey` and `Config.ToggleHudKey` are registered with rsg-core `RegisterKey` (fallback `RegisterKeyMapping` with `+rsghud_settings` / `+rsghud_toggle` commands when the installed rsg-core has no `RegisterKey`). They are ignored while a NUI has focus, and players can rebind them in the game's key settings.
 
 ### 10.2 Colours
 Slots are `<icon>.normal` / `<icon>.alert` (icon keys as in `Config.IconColors`) and `ring.good` / `ring.warn` / `ring.bad`. *Alert* replaces the low / active / hasmail / cold colour. Only `#rrggbb` is kept, a colour equal to the default is not stored. Ring colours become CSS variables `--ring-good/-warn/-bad` on `#ui-container`. The picker is pure HTML (no native `<input type="color">`, which can crash RedM's CEF).
@@ -439,7 +471,7 @@ Every 500 ms the client picks off / map / compass for on-foot or mounted/vehicle
 | `compass` | `heading` (0-359) | on change, 200 ms check |
 | `combat` | `armed`, `hasAmmo`, `clip`, `reserve`, `condition` (0-100 or absent) | on change, 200 ms check |
 | `setLocales` | `locales` (key to text) | once after `nuiReady` |
-| `setConfig` | `iconColors`, `voiceEnabled`, `deadeyeEnabled`, `bondEnabled`, `horseNeedsEnabled`, `allowMap`, `allowColors`, `badges` (`clock compass ammo weapon wellfed horseinjury`), `horseInjuredBelow`, `clock24h`, `limits` | once after `nuiReady` |
+| `setConfig` | `iconColors`, `voiceEnabled`, `deadeyeEnabled`, `bondEnabled`, `horseNeedsEnabled`, `allowMap`, `allowColors`, `allowFeatures`, `features` (switch key to available), `badges` (`clock compass ammo weapon wellfed horseinjury`), `horseInjuredBelow`, `clock24h`, `limits` | once after `nuiReady` |
 | `applyPreset` | `preset`, `clearCustom` | layout / display apply and live revert |
 | `openPresetMenu` / `closePresetMenu` | `preset` | settings window |
 | `toggleEditMode` | `enabled` | edit mode |
@@ -463,12 +495,13 @@ NUI rules followed: Roboto font, monochrome leather and gold theme, no vignette,
 - **Decay modifiers cannot help a cheater.** `rsghud_act` / `rsghud_env` are only lookup keys, clamped to at least 1.0 and at most `maxMultiplier`. The well fed buff is decided from server values.
 - **Admin default layout.** The only server net event is `hud:server:setDefaultLayout`: valid player, 5 s cooldown first, then `HasPermission`, then `sanitiseLayout` (whitelists and clamps, 64 colour cap). The `pushhuddefault` / `clearhuddefault` commands are permission-restricted by rsg-core.
 - **Rate limits and caching.** `/bank` has a 3 s cooldown (it queries rsg-banking), the outlaw callback is cached 20 s per player so a spamming client cannot hammer the database. All SQL uses `?` parameters.
+- **Feature switches are cosmetic.** They can only silence notifications, sounds and effects (or hide the HUD) for that player. Nothing the server decides (needs, decay, damage, well fed) reads them, and the admin default layout re-validates them as plain booleans.
 - **Client-only data.** Layout, colours and display settings are per-player cosmetics stored on the player's own machine and sanitised on load, so a tampered KVP or share code cannot inject anything beyond whitelisted values.
 - **Other scripts.** `hud:client:UpdateX` events can only be triggered locally or by the server, but any script can call the client exports. If your reward scripts give hunger / thirst, do it from the server with `SetNeed`, after your own validation.
 
 ## 13. Locales
 
-`locales/*.json`: `en` (master), `de`, `el`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-br`, `ro`, `ru`. Every file has the same 125 keys. Set the language with `setr rsg:locale en`. Loaded by rsg-core through `@rsg-core/shared/locale.lua`, used as `locale('key', ...)`.
+`locales/*.json`: `en` (master), `de`, `el`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-br`, `ro`, `ru`. Every file has the same 161 keys. Set the language with `setr rsg:locale en`. Loaded by rsg-core through `@rsg-core/shared/locale.lua`, used as `locale('key', ...)`.
 
 | Key group | Used for |
 |---|---|
@@ -477,6 +510,8 @@ NUI rules followed: Roboto font, monochrome leather and gold theme, no vignette,
 | `stress_gain`, `stress_relief`, `high_stress`, `low_*`, `temp_*`, `wellfed_*` | gameplay notifications |
 | `preset_*`, `settings_*`, `tab_*`, `set_*`, `map_*` | settings window |
 | `col_*`, `palette_*` | Colours tab |
+| `tab_features`, `feat_*`, `icons_show_all`, `icons_hide_all` | Features tab and the Icons tab bulk buttons |
+| `key_*`, `hud_toggle_*`, `cmd_togglehud_help` | key binding names, `/togglehud` notices and command help |
 | `set_share`, `share_*` | share layout |
 | `cmd_*`, `default_*`, `layout_reset_done` | commands and admin default layout notices |
 | `compass_dirs` | 8 comma separated compass letters (N,NE,E,SE,S,SW,W,NW) |

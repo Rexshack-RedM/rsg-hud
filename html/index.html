@@ -280,6 +280,10 @@
                     <template v-if="tab === 'icons'">
                         <div class="preset-section">
                             <div class="preset-label">{{ t('preset_visibility', 'Show Icons') }}</div>
+                            <div class="bulk-row">
+                                <button class="wood-btn muted small" @click="setAllIcons(true)"><i class="fa-solid fa-eye"></i>&nbsp; {{ t('icons_show_all', 'Show All') }}</button>
+                                <button class="wood-btn muted small" @click="setAllIcons(false)"><i class="fa-solid fa-eye-slash"></i>&nbsp; {{ t('icons_hide_all', 'Hide All') }}</button>
+                            </div>
                             <div class="preset-options cols-3">
                                 <button v-for="k in hideableList" :key="k.key" class="preset-opt vis-opt" :class="{ active: !preset.hidden[k.key] }" @click="toggleHidden(k.key)">
                                     <i class="fa-solid" :class="preset.hidden[k.key] ? 'fa-eye-slash' : 'fa-eye'"></i>{{ stripEmoji(t(k.label, k.key)) }}
@@ -303,6 +307,30 @@
                             <div class="set-row" @click="resetPositions">
                                 <span class="set-badge"><i class="fa-solid fa-rotate-left"></i></span>
                                 <div class="set-text"><div class="set-name">{{ t('set_reset_pos', 'Reset Icon Positions') }}</div><div class="set-desc" :class="{ done: resetDone }">{{ resetDone ? t('set_reset_done', 'Positions reset') : t('reset_hud_desc', 'All HUD positions reset to default') }}</div></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- FEATURES -->
+                    <template v-if="tab === 'features'">
+                        <div class="preset-section">
+                            <div class="preset-label">{{ t('feat_group_general', 'General') }}</div>
+                            <div class="set-row" @click="toggleHud">
+                                <span class="set-badge"><i class="fa-solid fa-power-off"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t('feat_master', 'HUD Visible') }}</div><div class="set-desc">{{ t('feat_master_desc', 'Turn the whole HUD on or off') }}</div></div>
+                                <span class="switch" :class="{ on: hudIsOn }"><span class="knob"></span></span>
+                            </div>
+                        </div>
+                        <div class="bulk-row">
+                            <button class="wood-btn muted small" @click="setAllFeatures(true)"><i class="fa-solid fa-toggle-on"></i>&nbsp; {{ t('feat_all_on', 'All On') }}</button>
+                            <button class="wood-btn muted small" @click="setAllFeatures(false)"><i class="fa-solid fa-toggle-off"></i>&nbsp; {{ t('feat_all_off', 'All Off') }}</button>
+                        </div>
+                        <div class="preset-section" v-for="g in featureGroups" :key="g.label">
+                            <div class="preset-label">{{ t(g.label, g.label) }}</div>
+                            <div class="set-row" v-for="f in g.items" :key="f.key" @click="toggleFeature(f.key)">
+                                <span class="set-badge"><i class="fa-solid" :class="f.icon"></i></span>
+                                <div class="set-text"><div class="set-name">{{ t(f.label, f.key) }}</div><div class="set-desc">{{ t(f.desc, '') }}</div></div>
+                                <span class="switch" :class="{ on: featureOn(f.key) }"><span class="knob"></span></span>
                             </div>
                         </div>
                     </template>
