@@ -199,7 +199,7 @@ end)
 ---------------------------------
 -- An admin's own layout (/pushhuddefault) becomes the default for players without a saved layout. Everything the
 -- client sends is re-validated here: only known enum values, clamped numbers, booleans and hex colours are kept.
-local LAYOUT_KVP = 'rsghud_default_layout'
+local LAYOUT_KEY = 'rsghud_default_layout'
 local LAYOUT_ENUMS = {
     size = { small = true, medium = true, large = true },
     align = { ['bottom-left'] = true, ['bottom-center'] = true, ['bottom-right'] = true, ['top-left'] = true, ['top-center'] = true, ['top-right'] = true },
@@ -262,11 +262,24 @@ local function sanitiseLayout(l)
 end
 
 local defaultLayout
-do
-    local raw = GetResourceKvpString(LAYOUT_KVP)
+local layoutLoaded = false
+
+-- stored in MySQL instead of resource KVP, so no server "db" folder is created
+MySQL.ready(function()
+    if Config.AutoDatabase then
+        MySQL.query.await([[
+CREATE TABLE IF NOT EXISTS `rsg_hud_state` (
+  `key` VARCHAR(50) NOT NULL,
+  `value` LONGTEXT NOT NULL,
+  PRIMARY KEY (`key`)
+)]])
+    end
+    local raw = MySQL.scalar.await('SELECT `value` FROM rsg_hud_state WHERE `key` = ?', { LAYOUT_KEY })
     local ok, decoded = pcall(function() return raw and json.decode(raw) end)
     defaultLayout = ok and sanitiseLayout(decoded) or nil
-end
+    layoutLoaded = true
+    if defaultLayout then TriggerClientEvent('hud:client:DefaultLayoutChanged', -1) end
+end)
 
 local function notifyAdmin(src, key, nType)
     TriggerClientEvent('RSGCore:Client:Notify', src, { title = locale('settings_title'), description = locale(key), type = nType or 'success', duration = 5000 })
@@ -281,8 +294,9 @@ RSGCore.Commands.Add(Config.PushDefaultCommand or 'pushhuddefault', locale('cmd_
 end, Config.AdminPermission or 'admin')
 
 RSGCore.Commands.Add(Config.ClearDefaultCommand or 'clearhuddefault', locale('cmd_cleardefault_help'), {}, false, function(source)
+    if not layoutLoaded then return end
     defaultLayout = nil
-    DeleteResourceKvp(LAYOUT_KVP)
+    MySQL.prepare('DELETE FROM rsg_hud_state WHERE `key` = ?', { LAYOUT_KEY })
     TriggerClientEvent('hud:client:DefaultLayoutChanged', -1)
     notifyAdmin(source, 'default_cleared')
 end, Config.AdminPermission or 'admin')
@@ -298,9 +312,9 @@ RegisterNetEvent('hud:server:setDefaultLayout', function(layout)
     end
 
     local clean = sanitiseLayout(layout)
-    if not clean then return end
+    if not clean or not layoutLoaded then return end
     defaultLayout = clean
-    SetResourceKvp(LAYOUT_KVP, json.encode(clean))
+    MySQL.prepare('INSERT INTO rsg_hud_state (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)', { LAYOUT_KEY, json.encode(clean) })
     TriggerClientEvent('hud:client:DefaultLayoutChanged', -1)
     notifyAdmin(src, 'default_pushed')
 end)

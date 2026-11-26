@@ -1,6 +1,6 @@
 # rsg-hud — Developer Docs
 
-**Version 3.4.0** · RSG Framework (rsg-core 3.x) · Lua 5.4 + Vue 3 NUI
+**Version 3.4.1** · RSG Framework (rsg-core 3.x) · Lua 5.4 + Vue 3 NUI
 
 Technical reference for server owners and developers. For a short overview and the player-facing feature list see [README.md](README.md).
 
@@ -13,7 +13,7 @@ Technical reference for server owners and developers. For a short overview and t
 6. [Exports](#6-exports)
 7. [Events and callbacks](#7-events-and-callbacks)
 8. [Commands](#8-commands)
-9. [Storage reference (state bags, KVP, localStorage)](#9-storage-reference)
+9. [Storage reference (state bags, KVP, database, localStorage)](#9-storage-reference)
 10. [Features in detail](#10-features-in-detail)
 11. [NUI reference](#11-nui-reference)
 12. [Security model](#12-security-model)
@@ -30,7 +30,7 @@ rsg-hud draws the player and horse HUD (rings for health, stamina, dead eye, hun
 | Dependency | Required | Used for |
 |---|---|---|
 | `rsg-core` | yes | player data, notifications (`RSGCore.Functions.Notify`), callbacks, commands, locales (`@rsg-core/shared/locale.lua`) |
-| `oxmysql` | yes | reads `players.outlawstatus` (one query per player per 20 s at most) |
+| `oxmysql` | yes | reads `players.outlawstatus` (one query per player per 20 s at most), stores the admin default layout |
 | `rsg-banking` v3 | optional | `/bank` total balance (`GetTotalBalance`), falls back to the core `bank` money |
 | `rsg-stables` | optional | horse hunger / thirst circles (`GetActiveHorseNeeds`, see section 10.9) |
 | `rsg-weather` | optional | keeps the game clock the clock badge reads in sync |
@@ -46,6 +46,7 @@ rsg-hud/
 ├── shared/config.lua       every option (section 4)
 ├── client/client.lua       needs, stress, temperature, warnings, NUI feeds, settings window logic, exports
 ├── server/server.lua       /cash /bloodmoney /bank, outlaw callback, server-owned needs, decay modifiers, default layout, exports
+├── install.sql             manual database install
 ├── server/versionchecker.lua   GitHub version check (prints to the server console)
 ├── html/index.html         NUI markup (HUD, money, settings window)
 ├── html/app.js             Vue apps: money, player HUD, drag/resize edit mode, settings window
@@ -60,14 +61,16 @@ rsg-hud/
 2. `ensure rsg-hud` after `rsg-core` (and `oxmysql`) in `server.cfg`. Optionally set the language: `setr rsg:locale en`.
 3. Adjust `shared/config.lua`.
 
-**Database:** rsg-hud creates no tables and needs no SQL import. It only reads the `outlawstatus` column of rsg-core's `players` table.
+**Database:** rsg-hud reads the `outlawstatus` column of rsg-core's `players` table, and keeps the admin default layout in `rsg_hud_state` (`key` VARCHAR(50) primary key, `value` LONGTEXT JSON). The table is created on start while `Config.AutoDatabase = true`; otherwise import `install.sql`. No server resource KVP is used, so the server creates no `db` folder.
 
 **Persistence**
 - Hunger, thirst, cleanliness and stress are state bags that rsg-core saves with the character (`stateBagKeys` in rsg-core).
 - Each player's layout and display settings live in the player's own client KVP (`rsghud_preset`).
-- The admin default layout lives in the server resource KVP (`rsghud_default_layout`).
+- The admin default layout lives in the `rsg_hud_state` table (row `rsghud_default_layout`).
 
 ## 4. Configuration
+
+`Config.AutoDatabase` (default `true`): create `rsg_hud_state` on start; `false` = import `install.sql`.
 
 | Option | Default | Notes |
 |---|---|---|
@@ -367,7 +370,7 @@ State bags rsg-hud only reads: `isLoggedIn`, `isBathingActive`, `inClothingStore
 ```
 Everything is sanitised on load (`sanitiseDisplay`, `sanitiseHidden`, `sanitiseFeatures`) and again on every save from the NUI (`savePreset`). Missing values fall back to Config.
 
-### 9.3 Server resource KVP `rsghud_default_layout`
+### 9.3 Database row `rsg_hud_state` / `rsghud_default_layout`
 JSON of the admin default layout, same shape as above, already sanitised by `sanitiseLayout`. It carries `display.features` but never `hudOn`, so a default layout cannot hide anyone's HUD.
 
 ### 9.4 NUI localStorage
@@ -433,7 +436,7 @@ The ammo and weapon feed (`combat`) is only sent when its content changes and is
 ### 10.7 Admin default layout
 1. An admin with `Config.AdminPermission` sets up their HUD and runs `/pushhuddefault`.
 2. The server triggers `hud:client:SendDefaultLayout` on that admin; the client answers with `hud:server:setDefaultLayout(getPreset())`.
-3. The server re-checks permission (`RSGCore.Functions.HasPermission`), applies a 5 s per-player cooldown, runs `sanitiseLayout` (known enums, clamped numbers, booleans, `#rrggbb` colours, known icon keys, palette whitelist), stores the JSON in KVP `rsghud_default_layout` and broadcasts `hud:client:DefaultLayoutChanged`.
+3. The server re-checks permission (`RSGCore.Functions.HasPermission`), applies a 5 s per-player cooldown, runs `sanitiseLayout` (known enums, clamped numbers, booleans, `#rrggbb` colours, known icon keys, palette whitelist), stores the JSON in `rsg_hud_state` (row `rsghud_default_layout`) and broadcasts `hud:client:DefaultLayoutChanged`.
 4. Each client calls the callback `hud:server:getDefaultLayout`. `getPreset()` uses the player's own saved preset first, then this default, then `Config.DefaultPreset`.
 
 `/clearhuddefault` removes it. `/resethudlayout` lets a player drop their own layout to fall back to the default. Players who saved their own layout keep it.

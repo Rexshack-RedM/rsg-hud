@@ -2,6 +2,11 @@
 
 All notable changes to rsg-hud. Newest first.
 
+## 3.4.1
+
+### Changed
+- The admin default layout is saved in MySQL (`rsg_hud_state`) instead of server resource KVP, so the server no longer creates a `db` folder. The old default is not migrated: run `/pushhuddefault` again. Players' own HUD settings are unchanged.
+
 ## 3.4.0
 
 ### Added

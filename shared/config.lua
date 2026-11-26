@@ -1,5 +1,7 @@
 Config = {}
 
+Config.AutoDatabase = true -- create the database table on start; false = import install.sql yourself
+
 ----------------------------------
 -- needs settings
 ----------------------------------

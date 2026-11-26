@@ -1,6 +1,6 @@
 # rsg-hud
 
-**Version 3.4.0** · full technical reference in [DOCS.md](DOCS.md)
+**Version 3.4.1** · full technical reference in [DOCS.md](DOCS.md)
 
 Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thirst, cleanliness, stress, temperature, voice, mail and outlaw badges, horse health/stamina/cleanliness/bonding/hunger/thirst, a money pop-up, and a drag-and-resize edit mode.
 
@@ -22,12 +22,13 @@ Player and horse HUD for RSG-Core (RedM): health, stamina, dead eye, hunger, thi
 - [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
 - [rsg-banking](https://github.com/Rexshack-RedM/rsg-banking) v3 (optional, for `/bank`)
 - [rsg-stables](https://github.com/Rexshack-RedM/rsg-stables) (optional, for horse hunger/thirst)
-- [oxmysql](https://github.com/overextended/oxmysql) (reads `players.outlawstatus`)
+- [oxmysql](https://github.com/overextended/oxmysql) (reads `players.outlawstatus`, stores the admin default layout)
 
 ## Installation
 1. Drop `rsg-hud` into your resources folder.
 2. Add `ensure rsg-hud` after `rsg-core` in `server.cfg`.
 3. Configure `shared/config.lua`.
+4. The `rsg_hud_state` table is created automatically on start. To install it manually, set `Config.AutoDatabase = false` and import `install.sql`.
 
 ## Commands
 | Command | Description |
@@ -70,7 +71,7 @@ Config: `Config.SettingsCommand`, `Config.PresetCommand`, `Config.DefaultPreset`
 `Layout > Share Layout > Export` shows a code starting with `RSGHUD1:` (it is also copied when the game allows it). Paste someone else's code and press **Import** to preview it live; nothing is saved until you press **Apply**. Codes are validated: unknown icons, values and colours are dropped.
 
 ### Admin default layout
-An admin with `Config.AdminPermission` sets up their own HUD, then runs `/pushhuddefault`. The server re-validates the layout, stores it (resource KVP) and every player **without a saved layout of their own** gets it, live. `/clearhuddefault` removes it. Players can run `/resethudlayout` to drop their own layout and use the default again.
+An admin with `Config.AdminPermission` sets up their own HUD, then runs `/pushhuddefault`. The server re-validates the layout, stores it (`rsg_hud_state` table) and every player **without a saved layout of their own** gets it, live. `/clearhuddefault` removes it. Players can run `/resethudlayout` to drop their own layout and use the default again.
 
 ## Extra badges
 All of these are small pills next to the mail / outlaw badges, draggable in edit mode, and hideable per player (`Icons` tab).
@@ -138,6 +139,7 @@ hud:ShowAccount(source, 'cash')     -- 'cash' | 'bloodmoney' | 'bank'
 All setters return `true`/`false`. Server exports only push values to the player's HUD; they never touch money or items.
 
 ## Configuration highlights
+- `Config.AutoDatabase` (default `true`): create `rsg_hud_state` on start.
 - `Config.StatusInterval`, `HungerRate`, `ThirstRate`, `StressDecayRate`: needs decay (scaled by `Config.DecayModifiers`).
 - `Config.WarningSound`, `Config.HighStressWarning`: warning sound and the high stress notification.
 - `Config.ShowClock`, `Clock24h`, `ShowCompass`, `ShowAmmo`, `ShowWeaponCondition`, `ShowHorseInjury`, `HorseInjuredBelow`: extra badges.
